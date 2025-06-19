@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowUpDown, LogOut, User } from "lucide-react"
 import { useAccount, useDisconnect } from "wagmi"
@@ -240,7 +241,7 @@ export default function SwapInterface() {
         paymentProof.proof,
         platformToVerifier(fromMethod as PaymentPlatforms),
         toCurrency as ZKP2PCurrencies,
-        recipient,
+        offrampRecipient,
         toMethod as PaymentPlatforms
       )
       setExecutionStep(4)
@@ -483,209 +484,234 @@ export default function SwapInterface() {
           ))}
         </div>
 
-        <Card className="shadow-xl border-0">
-          <CardHeader>
-            <CardTitle className="text-2xl text-center">
-              {currentStep === 1 && "Enter Swap Details"}
-              {currentStep === 2 && "Review Transaction"}
-              {currentStep === 3 && "Confirm Swap"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* From Section */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <div className="text-2xl">{paymentMethods.find((m) => m.id === fromMethod)?.logo}</div>
-                  <div>
-                    <div className="font-medium">From: {paymentMethods.find((m) => m.id === fromMethod)?.name}</div>
-                    <div className="text-sm text-gray-500">
-                      {currencies.find((c) => c.code === fromCurrency)?.flag}{" "}
-                      {currencies.find((c) => c.code === fromCurrency)?.country} ({fromCurrency})
+        <TooltipProvider>
+          <Card className="shadow-xl border-0">
+            <CardHeader>
+              <CardTitle className="text-2xl text-center">
+                {currentStep === 1 && "Enter Swap Details"}
+                {currentStep === 2 && "Review Transaction"}
+                {currentStep === 3 && "Confirm Swap"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* From Section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="text-2xl">{paymentMethods.find((m) => m.id === fromMethod)?.logo}</div>
+                    <div>
+                      <div className="font-medium">From: {paymentMethods.find((m) => m.id === fromMethod)?.name}</div>
+                      <div className="text-sm text-gray-500">
+                        {currencies.find((c) => c.code === fromCurrency)?.flag}{" "}
+                        {currencies.find((c) => c.code === fromCurrency)?.country} ({fromCurrency})
+                      </div>
                     </div>
                   </div>
-                </div>
-                {currentStep === 1 && (
-                  <div className="flex space-x-2">
-                    <Select value={fromCurrency} onValueChange={handleFromCurrencyChange}>
-                      <SelectTrigger className="w-24">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {getAvailableCurrencies(fromMethod).map((currencyCode) => {
-                          const currency = currencies.find((c) => c.code === currencyCode)
-                          return currency ? (
-                            <SelectItem key={currency.code} value={currency.code}>
-                              {currency.flag} {currency.code}
+                  {currentStep === 1 && (
+                    <div className="flex space-x-2">
+                      <Select value={fromCurrency} onValueChange={handleFromCurrencyChange}>
+                        <SelectTrigger className="w-24">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getAvailableCurrencies(fromMethod).map((currencyCode) => {
+                            const currency = currencies.find((c) => c.code === currencyCode)
+                            return currency ? (
+                              <SelectItem key={currency.code} value={currency.code}>
+                                {currency.flag} {currency.code}
+                              </SelectItem>
+                            ) : null
+                          })}
+                        </SelectContent>
+                      </Select>
+                      <Select value={fromMethod} onValueChange={handleFromMethodChange}>
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {paymentMethods.map((method) => (
+                            <SelectItem key={method.id} value={method.id}>
+                              {method.logo} {method.name}
                             </SelectItem>
-                          ) : null
-                        })}
-                      </SelectContent>
-                    </Select>
-                    <Select value={fromMethod} onValueChange={handleFromMethodChange}>
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {paymentMethods.map((method) => (
-                          <SelectItem key={method.id} value={method.id}>
-                            {method.logo} {method.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-              </div>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
 
-              {/* Swap Arrow */}
-              <div className="flex justify-center">
-                <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                  <ArrowUpDown className="h-5 w-5 text-gray-600" />
+                {/* Swap Arrow */}
+                <div className="flex justify-center">
+                  <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                    <ArrowUpDown className="h-5 w-5 text-gray-600" />
+                  </div>
+                </div>
+
+                {/* To Section */}
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="text-2xl">{paymentMethods.find((m) => m.id === toMethod)?.logo}</div>
+                    <div>
+                      <div className="font-medium">To: {paymentMethods.find((m) => m.id === toMethod)?.name}</div>
+                      <div className="text-sm text-gray-500">
+                        {currencies.find((c) => c.code === toCurrency)?.flag}{" "}
+                        {currencies.find((c) => c.code === toCurrency)?.country} ({toCurrency})
+                      </div>
+                    </div>
+                  </div>
+                  {currentStep === 1 && (
+                    <div className="flex space-x-2">
+                      <Select value={toCurrency} onValueChange={handleToCurrencyChange}>
+                        <SelectTrigger className="w-24">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getAvailableCurrencies(toMethod).map((currencyCode) => {
+                            const currency = currencies.find((c) => c.code === currencyCode)
+                            return currency ? (
+                              <SelectItem key={currency.code} value={currency.code}>
+                                {currency.flag} {currency.code}
+                              </SelectItem>
+                            ) : null
+                          })}
+                        </SelectContent>
+                      </Select>
+                      <div className="w-32 px-3 py-2 bg-gray-100 rounded-md flex items-center text-sm text-gray-600">
+                        {paymentMethods.find((m) => m.id === toMethod)?.logo}{" "}
+                        {paymentMethods.find((m) => m.id === toMethod)?.name}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* To Section */}
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <div className="text-2xl">{paymentMethods.find((m) => m.id === toMethod)?.logo}</div>
-                  <div>
-                    <div className="font-medium">To: {paymentMethods.find((m) => m.id === toMethod)?.name}</div>
-                    <div className="text-sm text-gray-500">
-                      {currencies.find((c) => c.code === toCurrency)?.flag}{" "}
-                      {currencies.find((c) => c.code === toCurrency)?.country} ({toCurrency})
-                    </div>
-                  </div>
+              {errors.currency && <div className="text-red-500 text-sm">{errors.currency}</div>}
+
+              {/* Amount Section */}
+              <div className="space-y-2">
+                <Label htmlFor="amount">Amount to Send ({fromCurrency})</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                  <Input
+                    id="amount"
+                    type="number"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className="pl-8 pr-16 text-lg"
+                    placeholder="0.00"
+                    disabled={currentStep !== 1}
+                  />
+                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                    {fromCurrency}
+                  </span>
                 </div>
-                {currentStep === 1 && (
-                  <div className="flex space-x-2">
-                    <Select value={toCurrency} onValueChange={handleToCurrencyChange}>
-                      <SelectTrigger className="w-24">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {getAvailableCurrencies(toMethod).map((currencyCode) => {
-                          const currency = currencies.find((c) => c.code === currencyCode)
-                          return currency ? (
-                            <SelectItem key={currency.code} value={currency.code}>
-                              {currency.flag} {currency.code}
-                            </SelectItem>
-                          ) : null
-                        })}
-                      </SelectContent>
-                    </Select>
-                    <div className="w-32 px-3 py-2 bg-gray-100 rounded-md flex items-center text-sm text-gray-600">
-                      {paymentMethods.find((m) => m.id === toMethod)?.logo}{" "}
-                      {paymentMethods.find((m) => m.id === toMethod)?.name}
-                    </div>
-                  </div>
-                )}
+                {errors.amount && <div className="text-red-500 text-sm">{errors.amount}</div>}
               </div>
-            </div>
 
-            {errors.currency && <div className="text-red-500 text-sm">{errors.currency}</div>}
-
-            {/* Amount Section */}
-            <div className="space-y-2">
-              <Label htmlFor="amount">Amount to Send ({fromCurrency})</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+              {/* Recipient Section (Onramp/Dev) */}
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Label htmlFor="onramp-recipient">Recipient</Label>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="cursor-pointer text-blue-500" tabIndex={0}>🛈</span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <span>
+                        Manually set the interstitial recipient here for MVP - will be automated later
+                      </span>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
                 <Input
-                  id="amount"
-                  type="number"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="pl-8 pr-16 text-lg"
-                  placeholder="0.00"
+                  id="onramp-recipient"
+                  value={onrampRecipient}
+                  onChange={(e) => setOnrampRecipient(e.target.value)}
+                  placeholder="Enter onramp recipient name"
                   disabled={currentStep !== 1}
                 />
-                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                  {fromCurrency}
-                </span>
               </div>
-              {errors.amount && <div className="text-red-500 text-sm">{errors.amount}</div>}
-            </div>
-
-            {/* Recipient Section */}
-            <div className="space-y-2">
-              <Label htmlFor="recipient">Recipient</Label>
-              <Input
-                id="recipient"
-                value={offrampRecipient}
-                onChange={(e) => setOfframpRecipient(e.target.value)}
-                placeholder="Enter recipient name"
-                disabled={currentStep !== 1}
-              />
-              {errors.recipient && <div className="text-red-500 text-sm">{errors.recipient}</div>}
-            </div>
-
-            {/* Exchange Rate Info */}
-            {amount && Number.parseFloat(amount) > 0 && (
-              <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                <div className="text-sm text-gray-600">
-                  Exchange Rate: 1.00 {fromCurrency} = {exchangeRate.toFixed(4)} {toCurrency}
-                </div>
-                <div className="text-sm font-medium">
-                  Recipient will get: {recipientAmount} {toCurrency}
-                </div>
+              {/* Offramp Recipient Section */}
+              <div className="space-y-2">
+                <Label htmlFor="recipient">Offramp Recipient</Label>
+                <Input
+                  id="recipient"
+                  value={offrampRecipient}
+                  onChange={(e) => setOfframpRecipient(e.target.value)}
+                  placeholder="Enter recipient name"
+                  disabled={currentStep !== 1}
+                />
+                {errors.recipient && <div className="text-red-500 text-sm">{errors.recipient}</div>}
               </div>
-            )}
 
-            {/* Transaction Summary for Review/Confirm */}
-            {currentStep >= 2 && (
-              <div className="bg-blue-50 p-4 rounded-lg space-y-3">
-                <h3 className="font-medium text-blue-900">Transaction Summary</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Amount:</span>
-                    <span>
-                      ${amount} {fromCurrency}
-                    </span>
+              {/* Exchange Rate Info */}
+              {amount && Number.parseFloat(amount) > 0 && (
+                <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+                  <div className="text-sm text-gray-600">
+                    Exchange Rate: 1.00 {fromCurrency} = {exchangeRate.toFixed(4)} {toCurrency}
                   </div>
-                  <div className="flex justify-between">
-                    <span>Exchange Rate:</span>
-                    <span>
-                      1 {fromCurrency} = {exchangeRate} {toCurrency}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Recipient Gets:</span>
-                    <span>
-                      R${recipientAmount} {toCurrency}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Fee:</span>
-                    <span>$0.99</span>
-                  </div>
-                  <div className="border-t pt-2 flex justify-between font-medium">
-                    <span>Total:</span>
-                    <span>
-                      ${(Number.parseFloat(amount) + 0.99).toFixed(2)} {fromCurrency}
-                    </span>
+                  <div className="text-sm font-medium">
+                    Recipient will get: {recipientAmount} {toCurrency}
                   </div>
                 </div>
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex space-x-4">
-              {currentStep > 1 && (
-                <Button variant="outline" onClick={handleBack} className="flex-1">
-                  Back
-                </Button>
               )}
-              <Button
-                onClick={handleContinue}
-                className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-              >
-                {currentStep === 1 && "Continue"}
-                {currentStep === 2 && "Confirm"}
-                {currentStep === 3 && "Execute Swap"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+
+              {/* Transaction Summary for Review/Confirm */}
+              {currentStep >= 2 && (
+                <div className="bg-blue-50 p-4 rounded-lg space-y-3">
+                  <h3 className="font-medium text-blue-900">Transaction Summary</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Amount:</span>
+                      <span>
+                        ${amount} {fromCurrency}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Exchange Rate:</span>
+                      <span>
+                        1 {fromCurrency} = {exchangeRate} {toCurrency}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Recipient Gets:</span>
+                      <span>
+                        R${recipientAmount} {toCurrency}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Fee:</span>
+                      <span>$0.99</span>
+                    </div>
+                    <div className="border-t pt-2 flex justify-between font-medium">
+                      <span>Total:</span>
+                      <span>
+                        ${(Number.parseFloat(amount) + 0.99).toFixed(2)} {fromCurrency}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex space-x-4">
+                {currentStep > 1 && (
+                  <Button variant="outline" onClick={handleBack} className="flex-1">
+                    Back
+                  </Button>
+                )}
+                <Button
+                  onClick={handleContinue}
+                  className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                >
+                  {currentStep === 1 && "Continue"}
+                  {currentStep === 2 && "Confirm"}
+                  {currentStep === 3 && "Execute Swap"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TooltipProvider>
         {/* Execution Modal */}
         <Dialog open={showExecutionModal} onOpenChange={handleCloseModal}>
           <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
@@ -804,28 +830,13 @@ export default function SwapInterface() {
 
                 {executionStep === 4 && (
                   <div className="space-y-4">
-                    <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto">
-                      <Clock className="h-8 w-8 text-orange-600 animate-pulse" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold mb-2">Processing Swap</h3>
-                      <p className="text-gray-600">
-                        Waiting for market maker to complete the swap to your{" "}
-                        <strong>{paymentMethods.find((m) => m.id === toMethod)?.name}</strong> account...
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {executionStep === 5 && (
-                  <div className="space-y-4">
                     <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
                       <CheckCircle className="h-8 w-8 text-green-600" />
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold mb-2 text-green-600">Transfer Successful!</h3>
                       <p className="text-gray-600 mb-4">
-                        Your swap has been completed successfully. <strong>{recipient}</strong> should receive{" "}
+                        Your swap has been completed successfully. <strong>{offrampRecipient}</strong> should receive{" "}
                         <strong>
                           {recipientAmount} {toCurrency}
                         </strong>{" "}
@@ -837,6 +848,8 @@ export default function SwapInterface() {
                     </div>
                   </div>
                 )}
+
+                
               </div>
 
               {/* Trigger Payment Button */}
@@ -853,32 +866,30 @@ export default function SwapInterface() {
 
               {/* Step Indicators */}
               <div className="flex justify-between text-xs">
-                {["Send Payment", "Verify Transfer", "Submit On-Chain", "Market Maker", "Complete"].map(
-                  (label, index) => {
-                    const stepNum = index + 1
-                    const status = getStepStatus(stepNum)
-                    return (
-                      <div key={stepNum} className="flex flex-col items-center space-y-1">
-                        <div
-                          className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${status === "completed"
-                            ? "bg-green-500 text-white"
-                            : status === "current"
-                              ? "bg-blue-500 text-white"
-                              : "bg-gray-200 text-gray-500"
-                            }`}
-                        >
-                          {status === "completed" ? "✓" : stepNum}
-                        </div>
-                        <span
-                          className={`text-center ${status === "current" ? "text-blue-600 font-medium" : "text-gray-500"
-                            }`}
-                        >
-                          {label}
-                        </span>
+                {["Send Payment", "Verify Transfer", "Submit On-Chain", "Complete"].map((label, index) => {
+                  const stepNum = index + 1;
+                  const status = getStepStatus(stepNum);
+                  return (
+                    <div key={stepNum} className="flex flex-col items-center space-y-1">
+                      <div
+                        className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${status === "completed"
+                          ? "bg-green-500 text-white"
+                          : status === "current"
+                            ? "bg-blue-500 text-white"
+                            : "bg-gray-200 text-gray-500"
+                          }`}
+                      >
+                        {status === "completed" ? "✓" : stepNum}
                       </div>
-                    )
-                  },
-                )}
+                      <span
+                        className={`text-center ${status === "current" ? "text-blue-600 font-medium" : "text-gray-500"
+                          }`}
+                      >
+                        {label}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </DialogContent>

@@ -156,6 +156,8 @@ export const SambaContractProvider: React.FC<{ children: React.ReactNode }> = ({
             destinationUsername: string,
             destinationPlatform: PaymentPlatforms
         ): Promise<void> => {
+            console.log("Proof: ", onrampProof);
+            console.log("Intent hash: ", intentHash);
             if (!contract) {
                 throw new Error("Samba contract not available");
             }
@@ -212,19 +214,63 @@ export const SambaContractProvider: React.FC<{ children: React.ReactNode }> = ({
                 currencies: currencyWithRate
             }
             try {
-                // // const txHash = await contract.write.fulfillAndOfframp([
-                // //     amountFormatted,
-                // //     intentHash,
-                // //     encodedProof,
-                // //     offrampIntent,
-                // // ]);
-                // console.log("Transaction hash:", txHash);
-                // await publicClient!.waitForTransactionReceipt({
-                //     hash: txHash
-                // });
-                // console.log("Onramp Confirmed, Offramp Queued");
-            } catch (error) {
-                console.error("Error fulfilling and onramping:", error);
+                const simulationResult = await contract.simulate.fulfillAndOfframp([
+                    amountFormatted,
+                    intentHash,
+                    encodedProof,
+                    offrampIntent,
+                ]);
+                console.log("Simulation successful:", simulationResult);
+                const txHash = await contract.write.fulfillAndOfframp([
+                    amountFormatted,
+                    intentHash,
+                    encodedProof,
+                    offrampIntent,
+                ]);
+                console.log("Transaction hash:", txHash);
+                await publicClient!.waitForTransactionReceipt({
+                    hash: txHash
+                });
+                console.log("Onramp Confirmed, Offramp Queued");
+            } catch (error: any) {
+                console.error("=== DETAILED ERROR LOGGING ===");
+                console.error("Error type:", error.constructor.name);
+                console.error("Error message:", error.message);
+
+                // Check for specific error types
+                if (error.name === 'ContractFunctionRevertedError') {
+                    console.error("Contract reverted!");
+                    console.error("Revert reason:", error.data?.errorName || "Unknown");
+                    console.error("Short message:", error.shortMessage);
+                    console.error("Error data:", error.data);
+                }
+
+                // Log additional error properties
+                if (error.details) {
+                    console.error("Error details:", error.details);
+                }
+
+                if (error.cause) {
+                    console.error("Error cause:", error.cause);
+                }
+
+                // Log the full error object to see all available properties
+                console.error("Full error object:", JSON.stringify(error, (key, value) => {
+                    // Handle circular references and functions
+                    if (typeof value === 'function') return '[Function]';
+                    if (typeof value === 'object' && value !== null) {
+                        if (value.constructor && value.constructor.name !== 'Object') {
+                            return `[${value.constructor.name}]`;
+                        }
+                    }
+                    return value;
+                }, 2));
+
+                // Also log error stack for debugging
+                console.error("Error stack:", error.stack);
+
+                throw error;
+                // console.error("Error fulfilling and onramping:", error);
                 throw error;
             }
         };
