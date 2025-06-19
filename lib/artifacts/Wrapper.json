@@ -1,0 +1,213 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "Wrapper",
+  "sourceName": "contracts/Wrapper.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_zkp2p",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_usdc",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "by",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "depositId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "intentHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "IntentSignaled",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "depositId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "amount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "verifier",
+              "type": "address"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "fiatCurrency",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes",
+              "name": "gatingServiceSignature",
+              "type": "bytes"
+            }
+          ],
+          "internalType": "struct Wrapper.OnrampIntent",
+          "name": "onrampIntent",
+          "type": "tuple"
+        },
+        {
+          "internalType": "bytes",
+          "name": "paymentProof",
+          "type": "bytes"
+        },
+        {
+          "components": [
+            {
+              "internalType": "address[]",
+              "name": "verifiers",
+              "type": "address[]"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "address",
+                  "name": "intentGatingService",
+                  "type": "address"
+                },
+                {
+                  "internalType": "string",
+                  "name": "payeeDetails",
+                  "type": "string"
+                },
+                {
+                  "internalType": "bytes",
+                  "name": "data",
+                  "type": "bytes"
+                }
+              ],
+              "internalType": "struct IEscrow.DepositVerifierData[]",
+              "name": "data",
+              "type": "tuple[]"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "bytes32",
+                  "name": "code",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "conversionRate",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct IEscrow.Currency[][]",
+              "name": "currencies",
+              "type": "tuple[][]"
+            }
+          ],
+          "internalType": "struct Wrapper.OfframpIntent",
+          "name": "offrampIntent",
+          "type": "tuple"
+        }
+      ],
+      "name": "fulfillAndOfframp",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "depositId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "verifier",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "fiatCurrency",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes",
+          "name": "gatingServiceSignature",
+          "type": "bytes"
+        }
+      ],
+      "name": "signalIntent",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "intentHash",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "usdc",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "zkp2p",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x60c060405234801561001057600080fd5b5060405161051938038061051983398101604081905261002f91610062565b6001600160a01b039182166080521660a052610095565b80516001600160a01b038116811461005d57600080fd5b919050565b6000806040838503121561007557600080fd5b61007e83610046565b915061008c60208401610046565b90509250929050565b60805160a05161045a6100bf6000396000607c01526000818160d1015261010d015261045a6000f3fe608060405234801561001057600080fd5b506004361061004c5760003560e01c8063164322ae146100515780633e413bee1461007757806369e7ea69146100b657806384b6a788146100cc575b600080fd5b61006461005f366004610285565b6100f3565b6040519081526020015b60405180910390f35b61009e7f000000000000000000000000000000000000000000000000000000000000000081565b6040516001600160a01b03909116815260200161006e565b6100ca6100c4366004610304565b50505050565b005b61009e7f000000000000000000000000000000000000000000000000000000000000000081565b604051630571f9b160e31b81526000906001600160a01b037f00000000000000000000000000000000000000000000000000000000000000001690632b8fcd889061014e908a908a9030908b908b908b908b9060040161039f565b600060405180830381600087803b15801561016857600080fd5b505af115801561017c573d6000803e3d6000fd5b50506040516bffffffffffffffffffffffff1930606090811b8216602084015289901b166034820152604881018a905242606882015260009250608801905060408051601f19818403018152919052805160209091012090506101ff7f30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f000000182610402565b6040519092508290899033907f91dd7169eab1fe46b7925793f8a16f80f3efbe4dd7d7787a08c3da67948d2fb790600090a4509695505050505050565b60008083601f84011261024e57600080fd5b50813567ffffffffffffffff81111561026657600080fd5b60208301915083602082850101111561027e57600080fd5b9250929050565b60008060008060008060a0878903121561029e57600080fd5b863595506020870135945060408701356001600160a01b03811681146102c357600080fd5b935060608701359250608087013567ffffffffffffffff8111156102e657600080fd5b6102f289828a0161023c565b979a9699509497509295939492505050565b6000806000806060858703121561031a57600080fd5b843567ffffffffffffffff8082111561033257600080fd5b9086019060a0828903121561034657600080fd5b9094506020860135908082111561035c57600080fd5b6103688883890161023c565b9095509350604087013591508082111561038157600080fd5b5085016060818803121561039457600080fd5b939692955090935050565b878152602081018790526001600160a01b038681166040830152851660608201526080810184905260c060a0820181905281018290526000828460e0840137600060e0848401015260e0601f19601f850116830101905098975050505050505050565b60008261041f57634e487b7160e01b600052601260045260246000fd5b50069056fea2646970667358221220bee98777f85ee39cb12dd1ee919d28381957f760dabc0543a71ff5d627c02f0f64736f6c63430008120033",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b506004361061004c5760003560e01c8063164322ae146100515780633e413bee1461007757806369e7ea69146100b657806384b6a788146100cc575b600080fd5b61006461005f366004610285565b6100f3565b6040519081526020015b60405180910390f35b61009e7f000000000000000000000000000000000000000000000000000000000000000081565b6040516001600160a01b03909116815260200161006e565b6100ca6100c4366004610304565b50505050565b005b61009e7f000000000000000000000000000000000000000000000000000000000000000081565b604051630571f9b160e31b81526000906001600160a01b037f00000000000000000000000000000000000000000000000000000000000000001690632b8fcd889061014e908a908a9030908b908b908b908b9060040161039f565b600060405180830381600087803b15801561016857600080fd5b505af115801561017c573d6000803e3d6000fd5b50506040516bffffffffffffffffffffffff1930606090811b8216602084015289901b166034820152604881018a905242606882015260009250608801905060408051601f19818403018152919052805160209091012090506101ff7f30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f000000182610402565b6040519092508290899033907f91dd7169eab1fe46b7925793f8a16f80f3efbe4dd7d7787a08c3da67948d2fb790600090a4509695505050505050565b60008083601f84011261024e57600080fd5b50813567ffffffffffffffff81111561026657600080fd5b60208301915083602082850101111561027e57600080fd5b9250929050565b60008060008060008060a0878903121561029e57600080fd5b863595506020870135945060408701356001600160a01b03811681146102c357600080fd5b935060608701359250608087013567ffffffffffffffff8111156102e657600080fd5b6102f289828a0161023c565b979a9699509497509295939492505050565b6000806000806060858703121561031a57600080fd5b843567ffffffffffffffff8082111561033257600080fd5b9086019060a0828903121561034657600080fd5b9094506020860135908082111561035c57600080fd5b6103688883890161023c565b9095509350604087013591508082111561038157600080fd5b5085016060818803121561039457600080fd5b939692955090935050565b878152602081018790526001600160a01b038681166040830152851660608201526080810184905260c060a0820181905281018290526000828460e0840137600060e0848401015260e0601f19601f850116830101905098975050505050505050565b60008261041f57634e487b7160e01b600052601260045260246000fd5b50069056fea2646970667358221220bee98777f85ee39cb12dd1ee919d28381957f760dabc0543a71ff5d627c02f0f64736f6c63430008120033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}
