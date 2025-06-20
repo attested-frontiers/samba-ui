@@ -45,14 +45,14 @@ export default function SwapInterface() {
   const [toMethod, setToMethod] = useState("revolut")
   const [amount, setAmount] = useState("3.00")
   const [onrampRecipient, setOnrampRecipient] = useState("Ian-Brighton")
-  const [offrampRecipient, setOfframpRecipient] = useState("jp4g")
+  const [offrampRecipient, setOfframpRecipient] = useState("ibrighton")
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [showExecutionModal, setShowExecutionModal] = useState(false)
   const [executionStep, setExecutionStep] = useState(1)
   const [executionProgress, setExecutionProgress] = useState(0)
   const [isProcessing, setIsProcessing] = useState(false)
   const [isPaymentFound, setIsPaymentFound] = useState(false)
-  const [onrampIntentHash, setOnrampIntentHash] = useState<string | null>("0x0dc767971605cdf912e7b0fa5bb04a9f02f8bf4fe95f4497d01db707af401498")
+  const [onrampIntentHash, setOnrampIntentHash] = useState<string | null>("0x2cb6c7cd80b0b09bfc5fc9c68ad0d7d6fcd6926b88226ed7b1b832c7dd4e10af")
 
   // Proof management state
   const [proofStatus, setProofStatus] = useState<'idle' | 'generating' | 'success' | 'error' | 'timeout'>('idle')
@@ -123,8 +123,8 @@ export default function SwapInterface() {
       newErrors.amount = "Please enter a valid amount"
     }
 
-    if (Number.parseFloat(amount) < 1) {
-      newErrors.amount = "Minimum amount is $1.00"
+    if (Number.parseFloat(amount) < .1) {
+      newErrors.amount = "Minimum amount is $0.10"
     }
 
     if (Number.parseFloat(amount) > 10000) {
@@ -239,7 +239,6 @@ export default function SwapInterface() {
         amount,
         onrampIntentHash as `0x${string}`,
         paymentProof.proof,
-        platformToVerifier(fromMethod as PaymentPlatforms),
         toCurrency as ZKP2PCurrencies,
         offrampRecipient,
         toMethod as PaymentPlatforms
@@ -264,7 +263,10 @@ export default function SwapInterface() {
   // to signal intent
 
   const handleTriggerPayment = async () => {
-    const depositId = 0; // hardcoded for now
+    // const depositId = 0; // hardcoded for now
+    const depositId = process.env.NEXT_PUBLIC_DEPOSIT_ID
+      ? parseInt(process.env.NEXT_PUBLIC_DEPOSIT_ID)
+      : 0;
     const verifierAddress = platformToVerifier(fromMethod as PaymentPlatforms);
     const currency = fromCurrency as ZKP2PCurrencies;
     const intentHash = await samba.signalIntent(
@@ -311,6 +313,10 @@ export default function SwapInterface() {
         metadataCount: metadataArray.length
       });
 
+      console.log("transfer amount with formatting: ", `- $${amount}`);
+      console.log("transfer amount", amount);
+      console.log("expected recipient: ", onrampRecipient);
+
       const match = metadataArray.find(
         (transfer: any) =>
           transfer.recipient === onrampRecipient && transfer.amount === `- $${amount}`
@@ -331,16 +337,15 @@ export default function SwapInterface() {
 
   useEffect(() => {
     // fromMethod payment proving
+    console.log("proofIndex", proofIndex)
     if (proofIndex !== null && proofIndex >= 0 && onrampIntentHash != null) {
       console.log('🔥 Starting proof generation:', { proofIndex, onrampIntentHash, fromMethod });
 
-      // Trigger polling for automatic proof generation when index > 0
-      if (proofIndex > 0) {
-        console.log('📡 Starting proof polling for index:', proofIndex);
-        setTriggerProofFetchPolling(true);
-        setProofStatus('generating');
-      }
-      generatePaymentProof(fromMethod, onrampIntentHash, proofIndex);
+      console.log('📡 Starting proof polling for index:', proofIndex);
+      setTriggerProofFetchPolling(true);
+      setProofStatus('generating');
+      const intentHashBigInt = BigInt(onrampIntentHash).toString();
+      generatePaymentProof(fromMethod, intentHashBigInt, proofIndex);
     }
   }, [proofIndex, onrampIntentHash])
 
@@ -766,7 +771,7 @@ export default function SwapInterface() {
                           <p className="text-green-600 font-semibold">Payment found: {renderPaymentStatus()}</p>
 
                           {/* Proof Generation Status */}
-                          {proofIndex !== null && proofIndex > 0 && (
+                          {proofIndex !== null && (
                             <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
                               <div className="flex items-center space-x-2 mb-2">
                                 {proofStatus === 'generating' && <Clock className="h-4 w-4 text-blue-600 animate-spin" />}

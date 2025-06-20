@@ -4,6 +4,7 @@ import { useSambaContract } from '@/context/contracts/SambaContext';
 import { useEscrowContract } from '@/context/contracts/EscrowContext';
 import { useUSDCContract } from '@/context/contracts/USDCContext';
 import { ANVIL_CHAIN } from '@/lib/chain';
+import { base } from 'viem/chains';
 
 
 // Combined interface that includes all contract contexts
@@ -53,7 +54,7 @@ export const ContractsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                     if (error.code && error.code === 4902) {
                         try {
                             await walletClient.addChain({
-                                chain: ANVIL_CHAIN
+                                chain: base
                             });
                             await walletClient.switchChain({ id: expectedChainId });
                         } catch (error) {

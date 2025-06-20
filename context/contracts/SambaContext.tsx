@@ -3,10 +3,10 @@ import { createContext, useContext, useMemo } from "react";
 import { usePublicClient, useWalletClient } from "wagmi";
 import { getContract, parseEventLogs, parseUnits, zeroAddress } from "viem";
 import WrapperArtifact from "@/lib/artifacts/Wrapper.json";
-import { Intent, PaymentPlatforms, ZKP2PCurrencies } from "@/lib/types/intents";
+import { Intent, IntentSignalRequest, PaymentPlatforms, ZKP2PCurrencies } from "@/lib/types/intents";
 import { ANVIL_CHAIN, currencyKeccak256 } from "@/lib/chain";
 import { encodeProofAsBytes, parseExtensionProof, Proof } from "@/lib/types";
-import { getMarketMakerMetadataPayload } from "@/lib/utils";
+import { getMarketMakerMetadataPayload, platformToVerifier } from "@/lib/utils";
 import { ethers } from "ethers";
 
 
@@ -28,7 +28,6 @@ interface SambaContractContextProps {
         amount: string,
         intentHash: `0x${string}`,
         onrampProof: Proof,
-        verifier: `0x${string}`,
         currency: ZKP2PCurrencies,
         destinationUsername: string,
         destinationPlatform: PaymentPlatforms
@@ -83,42 +82,58 @@ export const SambaContractProvider: React.FC<{ children: React.ReactNode }> = ({
             const currencyHash = currencyKeccak256(currency);
             const amountFormatted = parseUnits(amount, 6);
 
-            const payload: Intent = {
+            // const payload: Intent = {
+            //     depositId: depositId.toString(),
+            //     amount: amountFormatted.toString(),
+            //     to: sambaContractAddress,
+            //     verifier,
+            //     fiatCurrency: currencyHash,
+            //     chainId: chainId.toString()
+            // }
+            const payload: IntentSignalRequest = {
+                processorName: "samba",
                 depositId: depositId.toString(),
-                amount: amountFormatted.toString(),
-                to: sambaContractAddress,
-                verifier,
-                fiatCurrency: currencyHash,
+                tokenAmount: amountFormatted.toString(),
+                payeeDetails: zeroAddress, // Placeholder, will be replaced with actual payee details hash
+                toAddress: sambaContractAddress,
+                fiatCurrencyCode: currencyHash,
                 chainId: chainId.toString()
             }
 
             console.log("Intent: ", payload);
             // get the gating service signature from the api
             let gatingServiceSignature = "";
-            try {
-                const response = await fetch("/api/gating", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(payload),
-                });
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    console.error('Error from Gating Service API:', errorData);
-                    throw new Error('Error getting gating service signature');
-                }
-                const data = await response.json();
-                gatingServiceSignature = data.signature;
-            } catch (error) {
-                console.error("Error getting gating service signature:", error);
-                throw error;
-            }
+            // try {
+            //     const response = await fetch("/api/gating", {
+            //         method: "POST",
+            //         headers: {
+            //             "Content-Type": "application/json",
+            //         },
+            //         body: JSON.stringify(payload),
+            //     });
+            //     if (!response.ok) {
+            //         const errorData = await response.json();
+            //         console.error('Error from Gating Service API:', errorData);
+            //         throw new Error('Error getting gating service signature');
+            //     }
+            //     const data = await response.json();
+            //     gatingServiceSignature = data.signature;
+            // } catch (error) {
+            //     console.error("Error getting gating service signature:", error);
+            //     throw error;
+            // }
 
             // signal intent onchain
             try {
                 console.log("Attempting to signal intent");
-
+                const simulationResult = await contract.simulate.signalIntent([
+                    depositId,
+                    amountFormatted,
+                    verifier,
+                    currencyHash,
+                    gatingServiceSignature
+                ]);
+                console.log("Simulation successful:", simulationResult);
                 const txHash = await contract.write.signalIntent([
                     depositId,
                     amountFormatted,
@@ -151,7 +166,6 @@ export const SambaContractProvider: React.FC<{ children: React.ReactNode }> = ({
             amount: string,
             intentHash: `0x${string}`,
             onrampProof: Proof,
-            verifier: `0x${string}`,
             currency: ZKP2PCurrencies,
             destinationUsername: string,
             destinationPlatform: PaymentPlatforms
@@ -201,13 +215,17 @@ export const SambaContractProvider: React.FC<{ children: React.ReactNode }> = ({
             // Prepare verifier data
             const verifierData = [{
                 // intentGatingService: DEV_ACCOUNTS.gating.pub,
-                intentGatingService: zeroAddress,
+                // intentGatingService: zeroAddress,
+                intentGatingService: process.env.NEXT_PUBLIC_INTENTS_GATING_ADDRESS!,
                 payeeDetails: payeeDetailsHash,
                 data: ethers.utils.defaultAbiCoder.encode(
                     ['address[]'],
                     [['0x0636c417755E3ae25C6c166D181c0607F4C572A3']]
                 )
             }];
+            // get verifier address
+            const verifier = platformToVerifier(destinationPlatform);
+            
             const offrampIntent = {
                 verifiers: [verifier],
                 data: verifierData,
@@ -269,8 +287,6 @@ export const SambaContractProvider: React.FC<{ children: React.ReactNode }> = ({
                 // Also log error stack for debugging
                 console.error("Error stack:", error.stack);
 
-                throw error;
-                // console.error("Error fulfilling and onramping:", error);
                 throw error;
             }
         };
