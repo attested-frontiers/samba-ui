@@ -398,6 +398,7 @@ export default function SwapInterface() {
       console.log('transfer amount with formatting: ', `- $${amount}`);
       console.log('transfer amount', amount);
       console.log('expected recipient: ', onrampRecipient);
+      console.log('metadata: ', metadataArray);
 
       const match = metadataArray.find(
         (transfer: any) =>
@@ -451,6 +452,12 @@ export default function SwapInterface() {
         body: 'Your payment proof has been generated and verified. You can now proceed with your transaction.',
         icon: '/placeholder-logo.png',
       });
+
+      // Auto-proceed to next step after 1.5 seconds
+      setTimeout(() => {
+        setExecutionStep(4);
+        setExecutionProgress(40);
+      }, 1500);
     } else if (paymentProof.status === 'error') {
       console.log('❌ Payment proof generation failed:', paymentProof);
       setProofStatus('error');
@@ -947,7 +954,7 @@ export default function SwapInterface() {
                           </div>
 
                           {/* Skip Trigger Button */}
-                          <div className='flex justify-center'>
+                          <div className='flex justify-end'>
                             <Button
                               onClick={() => {
                                 setExecutionStep(2);
@@ -955,7 +962,7 @@ export default function SwapInterface() {
                               }}
                               variant='outline'
                               size='sm'
-                              className='text-gray-600 border-gray-300 hover:bg-gray-50 text-xs px-4 py-1'
+                              className='text-red-600 border-red-300 hover:bg-red-50 text-xs px-3 py-0.5 h-6 rounded-full'
                             >
                               Skip Trigger
                             </Button>
@@ -1062,14 +1069,10 @@ export default function SwapInterface() {
                           </div>
                         ) : (
                           <div className='space-y-3'>
-                            <p className='text-green-600 font-semibold'>
-                              Payment found: {renderPaymentStatus()}
-                            </p>
-
                             {/* Proof Generation Status */}
                             {proofIndex !== null && (
-                              <div className='bg-blue-50 p-3 rounded-lg border border-blue-200'>
-                                <div className='flex items-center space-x-2 mb-2'>
+                              <div className='bg-blue-50 my-2 p-3 rounded-lg border border-blue-200'>
+                                <div className='flex items-center space-x-2'>
                                   {proofStatus === 'generating' && (
                                     <Clock className='h-4 w-4 text-blue-600 animate-spin' />
                                   )}
@@ -1115,21 +1118,24 @@ export default function SwapInterface() {
                                 )}
                               </div>
                             )}
+                            {proofIndex === null && (
+                              <div className='bg-red-50 my-2 p-3 rounded-lg border border-red-200'>
+                                <div className='flex items-center space-x-2'>
+                                  <div className='h-4 w-4 bg-red-600 rounded-full flex items-center justify-center text-white text-xs'>
+                                    !
+                                  </div>
+                                  <span className='font-medium text-sm text-red-800'>
+                                    No Matching Payment Found
+                                  </span>
+                                </div>
+                                <p className='text-xs text-red-700 mt-1'>
+                                  Could not find matching proof for{' '}
+                                  {onrampRecipient} of value ${amount}. Please
+                                  make the payment and try again.
+                                </p>
+                              </div>
+                            )}
                           </div>
-                        )}
-                        {/* <Button onClick={handleTriggerProof} className='w-full'>
-                          Prove Payment
-                        </Button> */}
-                        {Object.keys(platformMetadata).length > 0 && (
-                          <Button
-                            onClick={() => {
-                              setExecutionStep(4);
-                              setExecutionProgress(40);
-                            }}
-                            className='w-full bg-blue-500 hover:bg-blue-600 text-white'
-                          >
-                            Proceed to Next Step
-                          </Button>
                         )}
                       </div>
                     </div>
