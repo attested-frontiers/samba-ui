@@ -1,67 +1,101 @@
-"use client"
+'use client';
 
-import { useEffect, useState, useRef } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowUpDown, LogOut, User } from "lucide-react"
-import { useAccount, useDisconnect } from "wagmi"
-import { useContracts } from "@/context/contracts";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Progress } from "@/components/ui/progress"
-import { CheckCircle, Clock, ArrowRight } from "lucide-react"
+import { useEffect, useState, useRef } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from '@/components/ui/tooltip';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { ArrowUpDown, LogOut, User } from 'lucide-react';
+import { useAccount, useDisconnect } from 'wagmi';
+import { useContracts } from '@/context/contracts';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Progress } from '@/components/ui/progress';
+import { CheckCircle, Clock, ArrowRight } from 'lucide-react';
 import useExtensionProxyProofs from '@/hooks/useExtensionProxyProofs';
-import { platformToVerifier } from "@/lib/utils"
-import { PaymentPlatforms, QuoteRequest, QuoteResponse, ZKP2PCurrencies } from "@/lib/types/intents"
-import { parseUnits } from "viem"
-import { deposit } from "viem/zksync"
-
+import { platformToVerifier } from '@/lib/utils';
+import {
+  PaymentPlatforms,
+  QuoteRequest,
+  QuoteResponse,
+  ZKP2PCurrencies,
+} from '@/lib/types/intents';
+import { parseUnits } from 'viem';
+import { deposit } from 'viem/zksync';
 
 // Constants for proof polling
 const PROOF_FETCH_INTERVAL = 2000; // 2 seconds
 const PROOF_GENERATION_TIMEOUT = 600000; // 60 seconds
 
 const currencies = [
-  { code: "USD", name: "US Dollar", country: "United States", flag: "🇺🇸" },
-  { code: "EUR", name: "Euro", country: "European Union", flag: "🇪🇺" },
-  { code: "GBP", name: "British Pound", country: "United Kingdom", flag: "🇬🇧" },
-]
+  { code: 'USD', name: 'US Dollar', country: 'United States', flag: '🇺🇸' },
+  { code: 'EUR', name: 'Euro', country: 'European Union', flag: '🇪🇺' },
+  { code: 'GBP', name: 'British Pound', country: 'United Kingdom', flag: '🇬🇧' },
+];
 
 const paymentMethods = [
-  { id: "venmo", name: "Venmo", logo: "💙", availableCurrencies: ["USD"] },
-  { id: "revolut", name: "Revolut", logo: "🔵", availableCurrencies: ["USD", "EUR", "GBP"] },
-]
+  { id: 'venmo', name: 'Venmo', logo: '💙', availableCurrencies: ['USD'] },
+  {
+    id: 'revolut',
+    name: 'Revolut',
+    logo: '🔵',
+    availableCurrencies: ['USD', 'EUR', 'GBP'],
+  },
+];
 
 export default function SwapInterface() {
-  const { address } = useAccount()
+  const { address } = useAccount();
   const { samba } = useContracts();
-  const { disconnect } = useDisconnect()
-  const [currentStep, setCurrentStep] = useState(1)
-  const [proofIndex, setProofIndex] = useState<number | null>(null)
-  const [fromCurrency, setFromCurrency] = useState("USD")
-  const [toCurrency, setToCurrency] = useState("USD")
-  const [fromMethod, setFromMethod] = useState("venmo")
-  const [toMethod, setToMethod] = useState("revolut")
-  const [amount, setAmount] = useState("3.00")
-  const [depositTarget, setDepositTarget] = useState<QuoteResponse | null>(null)
-  const [onrampRecipient, setOnrampRecipient] = useState("Ian-Brighton")
-  const [offrampRecipient, setOfframpRecipient] = useState("ibrighton")
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [showExecutionModal, setShowExecutionModal] = useState(false)
-  const [executionStep, setExecutionStep] = useState(1)
-  const [executionProgress, setExecutionProgress] = useState(0)
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [isPaymentFound, setIsPaymentFound] = useState(false)
-  const [onrampIntentHash, setOnrampIntentHash] = useState<string | null>("0x2cb6c7cd80b0b09bfc5fc9c68ad0d7d6fcd6926b88226ed7b1b832c7dd4e10af")
+  const { disconnect } = useDisconnect();
+  const [currentStep, setCurrentStep] = useState(1);
+  const [proofIndex, setProofIndex] = useState<number | null>(null);
+  const [fromCurrency, setFromCurrency] = useState('USD');
+  const [toCurrency, setToCurrency] = useState('USD');
+  const [fromMethod, setFromMethod] = useState('venmo');
+  const [toMethod, setToMethod] = useState('revolut');
+  const [amount, setAmount] = useState('3.00');
+  const [depositTarget, setDepositTarget] = useState<QuoteResponse | null>(
+    null
+  );
+  const [onrampRecipient, setOnrampRecipient] = useState('Ian-Brighton');
+  const [offrampRecipient, setOfframpRecipient] = useState('ibrighton');
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showExecutionModal, setShowExecutionModal] = useState(false);
+  const [executionStep, setExecutionStep] = useState(1);
+  const [executionProgress, setExecutionProgress] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isPaymentFound, setIsPaymentFound] = useState(false);
+  const [onrampIntentHash, setOnrampIntentHash] = useState<string | null>(
+    '0x2cb6c7cd80b0b09bfc5fc9c68ad0d7d6fcd6926b88226ed7b1b832c7dd4e10af'
+  );
+  const [isCancelingIntent, setIsCancelingIntent] = useState(false);
+  const [paymentTriggerError, setPaymentTriggerError] = useState<string>('');
 
   // Proof management state
-  const [proofStatus, setProofStatus] = useState<'idle' | 'generating' | 'success' | 'error' | 'timeout'>('idle')
-  const [triggerProofFetchPolling, setTriggerProofFetchPolling] = useState(false)
-  const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null)
-  const proofTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const [proofStatus, setProofStatus] = useState<
+    'idle' | 'generating' | 'success' | 'error' | 'error_intent' | 'timeout'
+  >('idle');
+  const [triggerProofFetchPolling, setTriggerProofFetchPolling] =
+    useState(false);
+  const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
+  const proofTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const {
     isSidebarInstalled,
@@ -82,198 +116,282 @@ export default function SwapInterface() {
       USD: { EUR: 0.85, GBP: 0.73, USD: 1 },
       EUR: { USD: 1.18, GBP: 0.86, EUR: 1 },
       GBP: { USD: 1.37, EUR: 1.16, GBP: 1 },
-    }
-    return rates[from]?.[to] || 1
-  }
+    };
+    return rates[from]?.[to] || 1;
+  };
 
   // useEffect(() => {
   //   console.log("platformMetadata changded:", platformMetadata);
   // }, [platformMetadata]);
 
-  const exchangeRate = getExchangeRate(fromCurrency, toCurrency)
-  const recipientAmount = (Number.parseFloat(amount) * exchangeRate).toFixed(2)
+  const exchangeRate = getExchangeRate(fromCurrency, toCurrency);
+  const recipientAmount = (Number.parseFloat(amount) * exchangeRate).toFixed(2);
 
   const getAvailableCurrencies = (paymentMethod: string) => {
-    const method = paymentMethods.find((m) => m.id === paymentMethod)
-    return method ? method.availableCurrencies : []
-  }
+    const method = paymentMethods.find((m) => m.id === paymentMethod);
+    return method ? method.availableCurrencies : [];
+  };
 
   const getOtherPaymentMethod = (currentMethod: string) => {
-    return currentMethod === "venmo" ? "revolut" : "venmo"
-  }
+    return currentMethod === 'venmo' ? 'revolut' : 'venmo';
+  };
 
   // Browser notification utility
-  const showBrowserNotification = async (title: string, options: NotificationOptions) => {
-    if (!("Notification" in window)) {
-      console.log("This browser does not support notifications");
+  const showBrowserNotification = async (
+    title: string,
+    options: NotificationOptions
+  ) => {
+    if (!('Notification' in window)) {
+      console.log('This browser does not support notifications');
       return;
     }
 
-    if (Notification.permission === "granted") {
+    if (Notification.permission === 'granted') {
       new Notification(title, options);
-    } else if (Notification.permission !== "denied") {
+    } else if (Notification.permission !== 'denied') {
       const permission = await Notification.requestPermission();
-      if (permission === "granted") {
+      if (permission === 'granted') {
         new Notification(title, options);
       }
     }
   };
 
   const validateForm = () => {
-    const newErrors: Record<string, string> = {}
+    const newErrors: Record<string, string> = {};
 
     if (!amount || Number.parseFloat(amount) <= 0) {
-      newErrors.amount = "Please enter a valid amount"
+      newErrors.amount = 'Please enter a valid amount';
     }
 
-    if (Number.parseFloat(amount) < .1) {
-      newErrors.amount = "Minimum amount is $0.10"
+    if (Number.parseFloat(amount) < 0.1) {
+      newErrors.amount = 'Minimum amount is $0.10';
     }
 
     if (Number.parseFloat(amount) > 10000) {
-      newErrors.amount = "Maximum amount is $10,000.00"
+      newErrors.amount = 'Maximum amount is $10,000.00';
     }
 
     if (!offrampRecipient.trim()) {
-      newErrors.recipient = "Please enter recipient name"
+      newErrors.recipient = 'Please enter recipient name';
     }
 
     // Check if currencies are valid for their respective payment methods
-    const fromMethodCurrencies = getAvailableCurrencies(fromMethod)
-    const toMethodCurrencies = getAvailableCurrencies(toMethod)
+    const fromMethodCurrencies = getAvailableCurrencies(fromMethod);
+    const toMethodCurrencies = getAvailableCurrencies(toMethod);
 
     if (!fromMethodCurrencies.includes(fromCurrency)) {
-      newErrors.currency = `${fromCurrency} is not available for ${paymentMethods.find((m) => m.id === fromMethod)?.name}`
+      newErrors.currency = `${fromCurrency} is not available for ${
+        paymentMethods.find((m) => m.id === fromMethod)?.name
+      }`;
     }
 
     if (!toMethodCurrencies.includes(toCurrency)) {
-      newErrors.currency = `${toCurrency} is not available for ${paymentMethods.find((m) => m.id === toMethod)?.name}`
+      newErrors.currency = `${toCurrency} is not available for ${
+        paymentMethods.find((m) => m.id === toMethod)?.name
+      }`;
     }
 
     // Ensure we're swapping between different methods
     if (fromMethod === toMethod) {
-      newErrors.currency = "You must swap between Venmo and Revolut"
+      newErrors.currency = 'You must swap between Venmo and Revolut';
     }
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleFromMethodChange = (newMethod: string) => {
-    setFromMethod(newMethod)
-    setToMethod(getOtherPaymentMethod(newMethod))
+    setFromMethod(newMethod);
+    setToMethod(getOtherPaymentMethod(newMethod));
 
     // Update currencies to valid ones for the new methods
-    const newFromCurrencies = getAvailableCurrencies(newMethod)
-    const newToCurrencies = getAvailableCurrencies(getOtherPaymentMethod(newMethod))
+    const newFromCurrencies = getAvailableCurrencies(newMethod);
+    const newToCurrencies = getAvailableCurrencies(
+      getOtherPaymentMethod(newMethod)
+    );
 
     if (!newFromCurrencies.includes(fromCurrency)) {
-      setFromCurrency(newFromCurrencies[0])
+      setFromCurrency(newFromCurrencies[0]);
     }
 
     if (!newToCurrencies.includes(toCurrency)) {
-      setToCurrency(newToCurrencies[0])
+      setToCurrency(newToCurrencies[0]);
     }
-  }
+  };
 
   const handleFromCurrencyChange = (newCurrency: string) => {
-    setFromCurrency(newCurrency)
+    setFromCurrency(newCurrency);
 
     // If both methods support the same currency, make sure to currencies are different
-    const toCurrencies = getAvailableCurrencies(toMethod)
+    const toCurrencies = getAvailableCurrencies(toMethod);
     if (toCurrencies.includes(newCurrency) && newCurrency === toCurrency) {
-      const otherCurrency = toCurrencies.find((c) => c !== newCurrency)
+      const otherCurrency = toCurrencies.find((c) => c !== newCurrency);
       if (otherCurrency) {
-        setToCurrency(otherCurrency)
+        setToCurrency(otherCurrency);
       }
     }
-  }
+  };
 
   const handleToCurrencyChange = (newCurrency: string) => {
-    setToCurrency(newCurrency)
+    setToCurrency(newCurrency);
 
     // If both methods support the same currency, make sure from currencies are different
-    const fromCurrencies = getAvailableCurrencies(fromMethod)
+    const fromCurrencies = getAvailableCurrencies(fromMethod);
     if (fromCurrencies.includes(newCurrency) && newCurrency === fromCurrency) {
-      const otherCurrency = fromCurrencies.find((c) => c !== newCurrency)
+      const otherCurrency = fromCurrencies.find((c) => c !== newCurrency);
       if (otherCurrency) {
-        setFromCurrency(otherCurrency)
+        setFromCurrency(otherCurrency);
       }
     }
-  }
+  };
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAmount(e.target.value);
+  };
+
+  const handleAmountBlur = () => {
+    let value = amount;
+
+    // If empty, set to 0.00
+    if (!value || value.trim() === '') {
+      setAmount('0.00');
+      return;
+    }
+
+    // Remove any non-numeric characters except decimal point
+    value = value.replace(/[^0-9.]/g, '');
+
+    // Ensure only one decimal point
+    const parts = value.split('.');
+    if (parts.length > 2) {
+      value = parts[0] + '.' + parts.slice(1).join('');
+    }
+
+    // If value starts with decimal, add leading 0
+    if (value.startsWith('.')) {
+      value = '0' + value;
+    }
+
+    // If there's a decimal point, ensure exactly 2 decimal places
+    if (value.includes('.')) {
+      const [whole, decimal] = value.split('.');
+      if (decimal.length === 1) {
+        value = whole + '.' + decimal + '0';
+      } else if (decimal.length > 2) {
+        value = whole + '.' + decimal.slice(0, 2);
+      }
+    } else {
+      // If no decimal point, add .00
+      value = value + '.00';
+    }
+
+    setAmount(value);
+  };
 
   const handleReviewTransaction = async () => {
     const request: QuoteRequest = {
       paymentPlatform: fromMethod as PaymentPlatforms,
       amount: parseUnits(amount, 6).toString(),
       fiatCurrency: fromCurrency as ZKP2PCurrencies,
-      user: address as `0x${string}`
-    }
+      user: address as `0x${string}`,
+    };
     let data: QuoteResponse;
     try {
       const response = await fetch('/api/deposits/quote', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(request)
-      })
+        body: JSON.stringify(request),
+      });
 
       if (!response.ok) {
-        const errorData = await response.json()
-        console.error('Error preparing swap:', errorData)
-        throw new Error(errorData.error || 'Failed to prepare swap')
+        const errorData = await response.json();
+        console.error('Error preparing swap:', errorData);
+        throw new Error(errorData.error || 'Failed to prepare swap');
       }
-      data = await response.json() as QuoteResponse
-      console.log("QUOTE DATA: ", data)
-      setDepositTarget(data)
-      if (fromMethod === "venmo") {
-        setOnrampRecipient(data.details.depositData.venmoUsername!)
-      } else if (fromMethod === "revolut") {
-        setOnrampRecipient(data.details.depositData.revolutUsername!)
+      data = (await response.json()) as QuoteResponse;
+      console.log('QUOTE DATA: ', data);
+      setDepositTarget(data);
+      if (fromMethod === 'venmo') {
+        setOnrampRecipient(data.details.depositData.venmoUsername!);
+      } else if (fromMethod === 'revolut') {
+        setOnrampRecipient(data.details.depositData.revolutUsername!);
       }
     } catch (error) {
-      console.error('Error preparing swap:', error)
+      console.error('Error preparing swap:', error);
       setErrors({ general: 'Failed to prepare swap. Please try again later.' });
       return;
     }
-  }
+  };
 
   const handleContinue = () => {
     if (currentStep === 1) {
       if (validateForm()) {
-        handleReviewTransaction()
-        setCurrentStep(2)
+        handleReviewTransaction();
+        setCurrentStep(2);
       }
     } else if (currentStep === 2) {
-      setCurrentStep(3)
+      setCurrentStep(3);
     } else if (currentStep === 3) {
       // Start execution modal
-      setShowExecutionModal(true)
-      setExecutionStep(1)
-      setExecutionProgress(0)
+      setShowExecutionModal(true);
+      setExecutionStep(1);
+      setExecutionProgress(0);
     }
-  }
+  };
 
   const handleBack = () => {
     if (currentStep > 1) {
-      setCurrentStep(currentStep - 1)
+      setCurrentStep(currentStep - 1);
     }
-  }
+  };
 
   const handleStepAcknowledge = () => {
-    setExecutionStep(2)
-    setExecutionProgress(20)
-  }
+    setExecutionStep(3);
+    setExecutionProgress(20);
+    handleTriggerProof();
+  };
+
+  const handlePaymentTriggerSuccess = () => {
+    setProofStatus('success');
+    setExecutionStep(2);
+    setExecutionProgress(10);
+  };
+
+  const handlePaymentTriggerError = (error: string) => {
+    if (error.includes('Account has unfulfilled intent')) {
+      setProofStatus('error_intent');
+      setPaymentTriggerError('Payment intent already exists. Please cancel');
+    } else {
+      setProofStatus('error');
+      setPaymentTriggerError('Failed to trigger payment. Please try again.');
+    }
+  };
+
+  const cancelIntent = async () => {
+    setIsCancelingIntent(true);
+    try {
+      await samba.cancelIntent(
+        '0x27a0a07aaa46344ef6d9f13f9b2f1140840f21b6e017fd04ec6828b467a6ade9' as `0x${string}`
+      );
+      setProofStatus('idle');
+      setPaymentTriggerError('');
+    } catch (error) {
+      console.error('Failed to cancel intent:', error);
+    } finally {
+      setIsCancelingIntent(false);
+    }
+  };
 
   const handleFinalizeOrder = async () => {
-    setIsProcessing(true)
+    setIsProcessing(true);
     if (!onrampIntentHash || !paymentProof) {
-      console.log("onramp intent hash", onrampIntentHash)
-      console.log("payment proof", paymentProof)
-      console.error("Missing onramp intent hash or payment proof")
-      setIsProcessing(false)
-      return
+      console.log('onramp intent hash', onrampIntentHash);
+      console.log('payment proof', paymentProof);
+      console.error('Missing onramp intent hash or payment proof');
+      setIsProcessing(false);
+      return;
     }
     try {
       await samba.fulfillAndOnramp(
@@ -283,67 +401,80 @@ export default function SwapInterface() {
         toCurrency as ZKP2PCurrencies,
         offrampRecipient,
         toMethod as PaymentPlatforms
-      )
-      setExecutionStep(4)
-      setExecutionProgress(80)
+      );
+      setExecutionStep(4);
+      setExecutionProgress(80);
     } catch (error) {
-      console.error("fulfillAndOnramp failed", error)
-      setIsProcessing(false)
+      console.error('fulfillAndOnramp failed', error);
+      setIsProcessing(false);
     }
-  }
+  };
 
   const handleCloseModal = () => {
-    setShowExecutionModal(false)
-    setExecutionStep(1)
-    setExecutionProgress(0)
-    setCurrentStep(1)
-    setIsProcessing(false)
-  }
+    setShowExecutionModal(false);
+    setExecutionStep(1);
+    setExecutionProgress(0);
+    setCurrentStep(1);
+    setIsProcessing(false);
+    setProofStatus('idle');
+    setProofIndex(null);
+  };
 
   // todo: this actually should open payment link byt being coopted
   // to signal intent
 
   const handleTriggerPayment = async () => {
-    // const depositId = 0; // hardcoded for now
-    // const depositId = process.env.NEXT_PUBLIC_DEPOSIT_ID
-    //   ? parseInt(process.env.NEXT_PUBLIC_DEPOSIT_ID)
-    //   : 0;
-    if (depositTarget === null) {
-      console.error("Deposit target is not set or invalid")
-      return
+    setProofStatus('generating');
+    setPaymentTriggerError('');
+
+    try {
+      // const depositId = 0; // hardcoded for now
+      // const depositId = process.env.NEXT_PUBLIC_DEPOSIT_ID
+      //   ? parseInt(process.env.NEXT_PUBLIC_DEPOSIT_ID)
+      //   : 0;
+      if (depositTarget === null) {
+        console.error('Deposit target is not set or invalid');
+        return;
+      }
+      const depositId = depositTarget.intent.intent.depositId;
+      const verifierAddress = platformToVerifier(
+        fromMethod as PaymentPlatforms
+      );
+      const currency = fromCurrency as ZKP2PCurrencies;
+      const intentHash = await samba.signalIntent(
+        depositTarget,
+        amount,
+        verifierAddress,
+        currency
+      );
+      setOnrampIntentHash(intentHash);
+      handlePaymentTriggerSuccess();
+    } catch (error: any) {
+      console.error('Payment trigger failed:', error);
+      handlePaymentTriggerError(error.message || 'Unknown error occurred');
     }
-    const depositId = depositTarget.intent.intent.depositId
-    const verifierAddress = platformToVerifier(fromMethod as PaymentPlatforms);
-    const currency = fromCurrency as ZKP2PCurrencies;
-    const intentHash = await samba.signalIntent(
-      depositTarget,
-      amount,
-      verifierAddress,
-      currency
-    );
-    setOnrampIntentHash(intentHash);
-  }
+  };
 
   const handleTriggerProof = () => {
     // determine action
     let proofAction = {
-      platform: "",
-      action: ""
+      platform: '',
+      action: '',
     };
-    if (fromMethod === "venmo") {
-      proofAction = { platform: "venmo", action: "transfer_venmo" }
-    } else if (fromMethod === "revolut") {
-      proofAction = { platform: "revolut", action: "transfer_revolut" }
+    if (fromMethod === 'venmo') {
+      proofAction = { platform: 'venmo', action: 'transfer_venmo' };
+    } else if (fromMethod === 'revolut') {
+      proofAction = { platform: 'revolut', action: 'transfer_revolut' };
     }
 
-    openNewTab(proofAction.action, proofAction.platform)
-  }
+    openNewTab(proofAction.action, proofAction.platform);
+  };
 
   const getStepStatus = (step: number) => {
-    if (executionStep > step) return "completed"
-    if (executionStep === step) return "current"
-    return "pending"
-  }
+    if (executionStep > step) return 'completed';
+    if (executionStep === step) return 'current';
+    return 'pending';
+  };
 
   const getPlatformMetadataCount = () => {
     return Object.keys(platformMetadata).length;
@@ -356,16 +487,18 @@ export default function SwapInterface() {
         fromMethod,
         onrampRecipient,
         amount: `- $${amount}`,
-        metadataCount: metadataArray.length
+        metadataCount: metadataArray.length,
       });
 
-      console.log("transfer amount with formatting: ", `- $${amount}`);
-      console.log("transfer amount", amount);
-      console.log("expected recipient: ", onrampRecipient);
+      console.log('transfer amount with formatting: ', `- $${amount}`);
+      console.log('transfer amount', amount);
+      console.log('expected recipient: ', onrampRecipient);
+      console.log('metadata: ', metadataArray);
 
       const match = metadataArray.find(
         (transfer: any) =>
-          transfer.recipient === onrampRecipient && transfer.amount === `- $${amount}`
+          transfer.recipient === onrampRecipient &&
+          transfer.amount === `- $${amount}`
       );
 
       if (match) {
@@ -383,9 +516,13 @@ export default function SwapInterface() {
 
   useEffect(() => {
     // fromMethod payment proving
-    console.log("proofIndex", proofIndex)
+    console.log('proofIndex', proofIndex);
     if (proofIndex !== null && proofIndex >= 0 && onrampIntentHash != null) {
-      console.log('🔥 Starting proof generation:', { proofIndex, onrampIntentHash, fromMethod });
+      console.log('🔥 Starting proof generation:', {
+        proofIndex,
+        onrampIntentHash,
+        fromMethod,
+      });
 
       console.log('📡 Starting proof polling for index:', proofIndex);
       setTriggerProofFetchPolling(true);
@@ -393,7 +530,7 @@ export default function SwapInterface() {
       const intentHashBigInt = BigInt(onrampIntentHash).toString();
       generatePaymentProof(fromMethod, intentHashBigInt, proofIndex);
     }
-  }, [proofIndex, onrampIntentHash])
+  }, [proofIndex, onrampIntentHash]);
 
   // Step 2: Monitor paymentProof status changes
   useEffect(() => {
@@ -408,8 +545,14 @@ export default function SwapInterface() {
       // Show success notification
       showBrowserNotification('Payment Proof Generated Successfully! 🎉', {
         body: 'Your payment proof has been generated and verified. You can now proceed with your transaction.',
-        icon: '/placeholder-logo.png'
+        icon: '/placeholder-logo.png',
       });
+
+      // Auto-proceed to next step after 1.5 seconds
+      setTimeout(() => {
+        setExecutionStep(4);
+        setExecutionProgress(40);
+      }, 1500);
     } else if (paymentProof.status === 'error') {
       console.log('❌ Payment proof generation failed:', paymentProof);
       setProofStatus('error');
@@ -417,7 +560,7 @@ export default function SwapInterface() {
       // Show error notification
       showBrowserNotification('Payment Proof Generation Failed ❌', {
         body: 'There was an error generating your payment proof. Please try again.',
-        icon: '/placeholder-logo.png'
+        icon: '/placeholder-logo.png',
       });
     } else {
       console.log('⏳ Payment proof still generating...', paymentProof);
@@ -429,7 +572,12 @@ export default function SwapInterface() {
   // Step 3: Handle proof polling
   useEffect(() => {
     if (triggerProofFetchPolling && fromMethod) {
-      console.log('🔄 Starting proof polling every', PROOF_FETCH_INTERVAL, 'ms for method:', fromMethod);
+      console.log(
+        '🔄 Starting proof polling every',
+        PROOF_FETCH_INTERVAL,
+        'ms for method:',
+        fromMethod
+      );
 
       if (intervalId) clearInterval(intervalId);
 
@@ -440,14 +588,18 @@ export default function SwapInterface() {
       setIntervalId(id);
 
       proofTimeoutRef.current = setTimeout(() => {
-        console.log('⏰ Proof generation timed out after', PROOF_GENERATION_TIMEOUT, 'ms');
+        console.log(
+          '⏰ Proof generation timed out after',
+          PROOF_GENERATION_TIMEOUT,
+          'ms'
+        );
         clearInterval(id);
         setTriggerProofFetchPolling(false);
         setProofStatus('timeout');
         // Show timeout notification
         showBrowserNotification('Payment Proof Generation Timed Out ⏱️', {
           body: 'The proof generation took longer than expected. Please try again.',
-          icon: '/placeholder-logo.png'
+          icon: '/placeholder-logo.png',
         });
       }, PROOF_GENERATION_TIMEOUT);
 
@@ -473,110 +625,143 @@ export default function SwapInterface() {
   }, [proofStatus, intervalId]);
 
   const renderPaymentStatus = () => {
-    return isPaymentFound ? "Found payment" : "Not found payment";
+    return isPaymentFound ? 'Found payment' : 'Not found payment';
   };
 
   const steps = [
-    { number: 1, title: "Details" },
-    { number: 2, title: "Review" },
-    { number: 3, title: "Confirm" },
-  ]
+    { number: 1, title: 'Details' },
+    { number: 2, title: 'Review' },
+    { number: 3, title: 'Confirm' },
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
-      {/* Header */}
-      <header className="container mx-auto px-4 py-6">
-        <nav className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">S</span>
-            </div>
-            <span className="text-xl font-bold text-gray-900">SwapFlow</span>
-          </div>
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <User className="h-4 w-4" />
-              <span>
-                {address?.slice(0, 6)}...{address?.slice(-4)}
-              </span>
-            </div>
-            <Button variant="outline" size="sm" onClick={() => disconnect()}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Disconnect
-            </Button>
-          </div>
-        </nav>
-      </header>
-
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
-        {/* Progress Steps */}
-        <div className="flex items-center justify-center mb-8">
-          {steps.map((step, index) => (
-            <div key={step.number} className="flex items-center">
-              <div
-                className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${currentStep >= step.number
-                  ? "bg-purple-600 border-purple-600 text-white"
-                  : "border-gray-300 text-gray-400"
-                  }`}
-              >
-                {step.number}
+    <TooltipProvider>
+      <div className='min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50'>
+        {/* Header */}
+        <header className='container mx-auto px-4 py-6'>
+          <nav className='flex items-center justify-between'>
+            <div className='flex items-center space-x-2'>
+              <div className='w-8 h-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg flex items-center justify-center'>
+                <span className='text-white font-bold text-sm'>S</span>
               </div>
-              <div className="ml-2 mr-8">
+              <span className='text-xl font-bold text-gray-900'>SwapFlow</span>
+            </div>
+            <div className='flex items-center space-x-4'>
+              <div className='flex items-center space-x-2 text-sm text-gray-600'>
+                <User className='h-4 w-4' />
+                <span>
+                  {address?.slice(0, 6)}...{address?.slice(-4)}
+                </span>
+              </div>
+              <Button variant='outline' size='sm' onClick={() => disconnect()}>
+                <LogOut className='h-4 w-4 mr-2' />
+                Disconnect
+              </Button>
+            </div>
+          </nav>
+        </header>
+
+        <div className='container mx-auto px-4 py-8 max-w-2xl'>
+          {/* Progress Steps */}
+          <div className='flex items-center justify-center mb-8'>
+            {steps.map((step, index) => (
+              <div key={step.number} className='flex items-center'>
                 <div
-                  className={`text-sm font-medium ${currentStep >= step.number ? "text-purple-600" : "text-gray-400"}`}
+                  className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
+                    currentStep >= step.number
+                      ? 'bg-purple-600 border-purple-600 text-white'
+                      : 'border-gray-300 text-gray-400'
+                  }`}
                 >
-                  {step.title}
+                  {step.number}
                 </div>
+                <div className='ml-2 mr-8'>
+                  <div
+                    className={`text-sm font-medium ${
+                      currentStep >= step.number
+                        ? 'text-purple-600'
+                        : 'text-gray-400'
+                    }`}
+                  >
+                    {step.title}
+                  </div>
+                </div>
+                {index < steps.length - 1 && (
+                  <div
+                    className={`w-16 h-0.5 mr-8 ${
+                      currentStep > step.number
+                        ? 'bg-purple-600'
+                        : 'bg-gray-300'
+                    }`}
+                  />
+                )}
               </div>
-              {index < steps.length - 1 && (
-                <div className={`w-16 h-0.5 mr-8 ${currentStep > step.number ? "bg-purple-600" : "bg-gray-300"}`} />
-              )}
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
 
-        <TooltipProvider>
-          <Card className="shadow-xl border-0">
+          <Card className='shadow-xl border-0'>
             <CardHeader>
-              <CardTitle className="text-2xl text-center">
-                {currentStep === 1 && "Enter Swap Details"}
-                {currentStep === 2 && "Review Transaction"}
-                {currentStep === 3 && "Confirm Swap"}
+              <CardTitle className='text-2xl text-center'>
+                {currentStep === 1 && 'Enter Swap Details'}
+                {currentStep === 2 && 'Review Transaction'}
+                {currentStep === 3 && 'Confirm Swap'}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className='space-y-6'>
               {/* From Section */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="text-2xl">{paymentMethods.find((m) => m.id === fromMethod)?.logo}</div>
+              <div className='space-y-4'>
+                <div className='flex items-center justify-between p-4 border rounded-lg'>
+                  <div className='flex items-center space-x-3'>
+                    <div className='text-2xl'>
+                      {paymentMethods.find((m) => m.id === fromMethod)?.logo}
+                    </div>
                     <div>
-                      <div className="font-medium">From: {paymentMethods.find((m) => m.id === fromMethod)?.name}</div>
-                      <div className="text-sm text-gray-500">
-                        {currencies.find((c) => c.code === fromCurrency)?.flag}{" "}
-                        {currencies.find((c) => c.code === fromCurrency)?.country} ({fromCurrency})
+                      <div className='font-medium'>
+                        From:{' '}
+                        {paymentMethods.find((m) => m.id === fromMethod)?.name}
+                      </div>
+                      <div className='text-sm text-gray-500'>
+                        {currencies.find((c) => c.code === fromCurrency)?.flag}{' '}
+                        {
+                          currencies.find((c) => c.code === fromCurrency)
+                            ?.country
+                        }{' '}
+                        ({fromCurrency})
                       </div>
                     </div>
                   </div>
                   {currentStep === 1 && (
-                    <div className="flex space-x-2">
-                      <Select value={fromCurrency} onValueChange={handleFromCurrencyChange}>
-                        <SelectTrigger className="w-24">
+                    <div className='flex space-x-2'>
+                      <Select
+                        value={fromCurrency}
+                        onValueChange={handleFromCurrencyChange}
+                      >
+                        <SelectTrigger className='w-24'>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {getAvailableCurrencies(fromMethod).map((currencyCode) => {
-                            const currency = currencies.find((c) => c.code === currencyCode)
-                            return currency ? (
-                              <SelectItem key={currency.code} value={currency.code}>
-                                {currency.flag} {currency.code}
-                              </SelectItem>
-                            ) : null
-                          })}
+                          {getAvailableCurrencies(fromMethod).map(
+                            (currencyCode) => {
+                              const currency = currencies.find(
+                                (c) => c.code === currencyCode
+                              );
+                              return currency ? (
+                                <SelectItem
+                                  key={currency.code}
+                                  value={currency.code}
+                                >
+                                  {currency.flag} {currency.code}
+                                </SelectItem>
+                              ) : null;
+                            }
+                          )}
                         </SelectContent>
                       </Select>
-                      <Select value={fromMethod} onValueChange={handleFromMethodChange}>
-                        <SelectTrigger className="w-32">
+                      <Select
+                        value={fromMethod}
+                        onValueChange={handleFromMethodChange}
+                      >
+                        <SelectTrigger className='w-32'>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -592,43 +777,59 @@ export default function SwapInterface() {
                 </div>
 
                 {/* Swap Arrow */}
-                <div className="flex justify-center">
-                  <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                    <ArrowUpDown className="h-5 w-5 text-gray-600" />
+                <div className='flex justify-center'>
+                  <div className='w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center'>
+                    <ArrowUpDown className='h-5 w-5 text-gray-600' />
                   </div>
                 </div>
 
                 {/* To Section */}
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="text-2xl">{paymentMethods.find((m) => m.id === toMethod)?.logo}</div>
+                <div className='flex items-center justify-between p-4 border rounded-lg'>
+                  <div className='flex items-center space-x-3'>
+                    <div className='text-2xl'>
+                      {paymentMethods.find((m) => m.id === toMethod)?.logo}
+                    </div>
                     <div>
-                      <div className="font-medium">To: {paymentMethods.find((m) => m.id === toMethod)?.name}</div>
-                      <div className="text-sm text-gray-500">
-                        {currencies.find((c) => c.code === toCurrency)?.flag}{" "}
-                        {currencies.find((c) => c.code === toCurrency)?.country} ({toCurrency})
+                      <div className='font-medium'>
+                        To:{' '}
+                        {paymentMethods.find((m) => m.id === toMethod)?.name}
+                      </div>
+                      <div className='text-sm text-gray-500'>
+                        {currencies.find((c) => c.code === toCurrency)?.flag}{' '}
+                        {currencies.find((c) => c.code === toCurrency)?.country}{' '}
+                        ({toCurrency})
                       </div>
                     </div>
                   </div>
                   {currentStep === 1 && (
-                    <div className="flex space-x-2">
-                      <Select value={toCurrency} onValueChange={handleToCurrencyChange}>
-                        <SelectTrigger className="w-24">
+                    <div className='flex space-x-2'>
+                      <Select
+                        value={toCurrency}
+                        onValueChange={handleToCurrencyChange}
+                      >
+                        <SelectTrigger className='w-24'>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {getAvailableCurrencies(toMethod).map((currencyCode) => {
-                            const currency = currencies.find((c) => c.code === currencyCode)
-                            return currency ? (
-                              <SelectItem key={currency.code} value={currency.code}>
-                                {currency.flag} {currency.code}
-                              </SelectItem>
-                            ) : null
-                          })}
+                          {getAvailableCurrencies(toMethod).map(
+                            (currencyCode) => {
+                              const currency = currencies.find(
+                                (c) => c.code === currencyCode
+                              );
+                              return currency ? (
+                                <SelectItem
+                                  key={currency.code}
+                                  value={currency.code}
+                                >
+                                  {currency.flag} {currency.code}
+                                </SelectItem>
+                              ) : null;
+                            }
+                          )}
                         </SelectContent>
                       </Select>
-                      <div className="w-32 px-3 py-2 bg-gray-100 rounded-md flex items-center text-sm text-gray-600">
-                        {paymentMethods.find((m) => m.id === toMethod)?.logo}{" "}
+                      <div className='w-32 px-3 py-2 bg-gray-100 rounded-md flex items-center text-sm text-gray-600'>
+                        {paymentMethods.find((m) => m.id === toMethod)?.logo}{' '}
                         {paymentMethods.find((m) => m.id === toMethod)?.name}
                       </div>
                     </div>
@@ -636,72 +837,88 @@ export default function SwapInterface() {
                 </div>
               </div>
 
-              {errors.currency && <div className="text-red-500 text-sm">{errors.currency}</div>}
+              {errors.currency && (
+                <div className='text-red-500 text-sm'>{errors.currency}</div>
+              )}
 
               {/* Amount Section */}
-              <div className="space-y-2">
-                <Label htmlFor="amount">Amount to Send ({fromCurrency})</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+              <div className='space-y-2'>
+                <Label htmlFor='amount'>Amount to Send ({fromCurrency})</Label>
+                <div className='relative'>
+                  <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500'>
+                    $
+                  </span>
                   <Input
-                    id="amount"
-                    type="number"
+                    id='amount'
+                    type='text'
                     value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    className="pl-8 pr-16 text-lg"
-                    placeholder="0.00"
+                    onChange={handleAmountChange}
+                    onBlur={handleAmountBlur}
+                    className='pl-8 pr-16 text-lg'
+                    placeholder='0.00'
                     disabled={currentStep !== 1}
                   />
-                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                  <span className='absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500'>
                     {fromCurrency}
                   </span>
                 </div>
-                {errors.amount && <div className="text-red-500 text-sm">{errors.amount}</div>}
+                {errors.amount && (
+                  <div className='text-red-500 text-sm'>{errors.amount}</div>
+                )}
               </div>
 
               {/* Recipient Section (Onramp/Dev) */}
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Label htmlFor="onramp-recipient">Recipient</Label>
+              <div className='space-y-2'>
+                <div className='flex items-center space-x-2'>
+                  <Label htmlFor='onramp-recipient'>Recipient</Label>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <span className="cursor-pointer text-blue-500" tabIndex={0}>🛈</span>
+                      <span
+                        className='cursor-pointer text-blue-500'
+                        tabIndex={0}
+                      >
+                        🛈
+                      </span>
                     </TooltipTrigger>
                     <TooltipContent>
                       <span>
-                        Manually set the interstitial recipient here for MVP - will be automated later
+                        Manually set the interstitial recipient here for MVP -
+                        will be automated later
                       </span>
                     </TooltipContent>
                   </Tooltip>
                 </div>
                 <Input
-                  id="onramp-recipient"
+                  id='onramp-recipient'
                   value={onrampRecipient}
                   onChange={(e) => setOnrampRecipient(e.target.value)}
-                  placeholder="Enter onramp recipient name"
+                  placeholder='Enter onramp recipient name'
                   disabled={currentStep !== 1}
                 />
               </div>
               {/* Offramp Recipient Section */}
-              <div className="space-y-2">
-                <Label htmlFor="recipient">Offramp Recipient</Label>
+              <div className='space-y-2'>
+                <Label htmlFor='recipient'>Offramp Recipient</Label>
                 <Input
-                  id="recipient"
+                  id='recipient'
                   value={offrampRecipient}
                   onChange={(e) => setOfframpRecipient(e.target.value)}
-                  placeholder="Enter recipient name"
+                  placeholder='Enter recipient name'
                   disabled={currentStep !== 1}
                 />
-                {errors.recipient && <div className="text-red-500 text-sm">{errors.recipient}</div>}
+                {errors.recipient && (
+                  <div className='text-red-500 text-sm'>{errors.recipient}</div>
+                )}
               </div>
 
               {/* Exchange Rate Info */}
               {amount && Number.parseFloat(amount) > 0 && (
-                <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                  <div className="text-sm text-gray-600">
-                    Exchange Rate: 1.00 {fromCurrency} = {exchangeRate.toFixed(4)} {toCurrency}
+                <div className='bg-gray-50 p-4 rounded-lg space-y-2'>
+                  <div className='text-sm text-gray-600'>
+                    Exchange Rate: 1.00 {fromCurrency} ={' '}
+                    {exchangeRate.toFixed(4)} {toCurrency}
                   </div>
-                  <div className="text-sm font-medium">
+                  <div className='text-sm font-medium'>
                     Recipient will get: {recipientAmount} {toCurrency}
                   </div>
                 </div>
@@ -709,35 +926,38 @@ export default function SwapInterface() {
 
               {/* Transaction Summary for Review/Confirm */}
               {currentStep >= 2 && (
-                <div className="bg-blue-50 p-4 rounded-lg space-y-3">
-                  <h3 className="font-medium text-blue-900">Transaction Summary</h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
+                <div className='bg-blue-50 p-4 rounded-lg space-y-3'>
+                  <h3 className='font-medium text-blue-900'>
+                    Transaction Summary
+                  </h3>
+                  <div className='space-y-2 text-sm'>
+                    <div className='flex justify-between'>
                       <span>Amount:</span>
                       <span>
                         ${amount} {fromCurrency}
                       </span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className='flex justify-between'>
                       <span>Exchange Rate:</span>
                       <span>
                         1 {fromCurrency} = {exchangeRate} {toCurrency}
                       </span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className='flex justify-between'>
                       <span>Recipient Gets:</span>
                       <span>
                         R${recipientAmount} {toCurrency}
                       </span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className='flex justify-between'>
                       <span>Fee:</span>
                       <span>$0.99</span>
                     </div>
-                    <div className="border-t pt-2 flex justify-between font-medium">
+                    <div className='border-t pt-2 flex justify-between font-medium'>
                       <span>Total:</span>
                       <span>
-                        ${(Number.parseFloat(amount) + 0.99).toFixed(2)} {fromCurrency}
+                        ${(Number.parseFloat(amount) + 0.99).toFixed(2)}{' '}
+                        {fromCurrency}
                       </span>
                     </div>
                   </div>
@@ -745,207 +965,382 @@ export default function SwapInterface() {
               )}
 
               {/* Action Buttons */}
-              <div className="flex space-x-4">
+              <div className='flex space-x-4'>
                 {currentStep > 1 && (
-                  <Button variant="outline" onClick={handleBack} className="flex-1">
+                  <Button
+                    variant='outline'
+                    onClick={handleBack}
+                    className='flex-1'
+                  >
                     Back
                   </Button>
                 )}
                 <Button
                   onClick={handleContinue}
-                  className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                  className='flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700'
                 >
-                  {currentStep === 1 && "Continue"}
-                  {currentStep === 2 && "Confirm"}
-                  {currentStep === 3 && "Execute Swap"}
+                  {currentStep === 1 && 'Continue'}
+                  {currentStep === 2 && 'Confirm'}
+                  {currentStep === 3 && 'Execute Swap'}
                 </Button>
               </div>
             </CardContent>
           </Card>
-        </TooltipProvider>
-        {/* Execution Modal */}
-        <Dialog open={showExecutionModal} onOpenChange={handleCloseModal}>
-          <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
-            <DialogHeader>
-              <DialogTitle className="text-center">Executing Swap</DialogTitle>
-            </DialogHeader>
 
-            <div className="space-y-6">
-              {/* Progress Bar */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm text-gray-600">
-                  <span>Progress</span>
-                </div>
-                {executionStep === 1 && (
-                  <div className="space-y-4">
-                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
-                      <ArrowRight className="h-8 w-8 text-blue-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold mb-2">Send Payment</h3>
-                      <p className="text-gray-600 mb-4">
-                        Please send{" "}
-                        <strong>
-                          ${amount} {fromCurrency}
-                        </strong>{" "}
-                        from your <strong>{paymentMethods.find((m) => m.id === fromMethod)?.name}</strong> account to{" "}
-                        <strong>{onrampRecipient}</strong>
-                      </p>
-                      <Button onClick={handleStepAcknowledge} className="w-full">
-                        I have sent the payment
-                      </Button>
-                    </div>
-                  </div>
-                )}
+          {/* Execution Modal */}
+          <Dialog open={showExecutionModal} onOpenChange={handleCloseModal}>
+            <DialogContent
+              className='sm:max-w-md'
+              onPointerDownOutside={(e) => e.preventDefault()}
+            >
+              <DialogHeader>
+                <DialogTitle className='text-center'>
+                  Executing Swap
+                </DialogTitle>
+              </DialogHeader>
 
-                {executionStep === 2 && (
-                  <div className="space-y-4">
-                    <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto">
-                      <Clock className="h-8 w-8 text-yellow-600 animate-spin" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold mb-2">Verifying Transfer</h3>
-                      <p className="text-gray-600">
-                        We're verifying your payment transfer. This usually takes a few seconds...
-                      </p>
-                      {Object.keys(platformMetadata).length === 0 ? (
-                        <div className="flex justify-center items-center">
-                          <Clock className="h-8 w-8 text-yellow-600 animate-spin" />
-                        </div>
-                      ) : (
-                        <div className="space-y-3">
-                          <p className="text-green-600 font-semibold">Payment found: {renderPaymentStatus()}</p>
+              <div className='space-y-6'>
+                {/* Progress Bar */}
+                <div className='space-y-2'>
+                  {executionStep === 1 && (
+                    <div className='space-y-4'>
+                      <div className='w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto'>
+                        <ArrowRight className='h-8 w-8 text-blue-600' />
+                      </div>
+                      <div>
+                        <h3 className='text-lg font-semibold mb-2'>
+                          Trigger Payment
+                        </h3>
+                        <p className='text-sm text-gray-600 mb-3 leading-relaxed'>
+                          Click the button below to initiate the payment process
+                          and generate the necessary intent hash for your
+                          transaction.
+                        </p>
 
-                          {/* Proof Generation Status */}
-                          {proofIndex !== null && (
-                            <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                              <div className="flex items-center space-x-2 mb-2">
-                                {proofStatus === 'generating' && <Clock className="h-4 w-4 text-blue-600 animate-spin" />}
-                                {proofStatus === 'success' && <CheckCircle className="h-4 w-4 text-green-600" />}
-                                {proofStatus === 'error' && <div className="h-4 w-4 bg-red-600 rounded-full flex items-center justify-center text-white text-xs">!</div>}
-                                {proofStatus === 'timeout' && <div className="h-4 w-4 bg-orange-600 rounded-full flex items-center justify-center text-white text-xs">⏱</div>}
-                                <span className="font-medium text-sm">
-                                  {proofStatus === 'generating' && 'Generating Payment Proof...'}
-                                  {proofStatus === 'success' && 'Payment Proof Generated Successfully'}
-                                  {proofStatus === 'error' && 'Payment Proof Generation Failed'}
-                                  {proofStatus === 'timeout' && 'Payment Proof Generation Timed Out'}
+                        {/* Payment Trigger Button with Tooltip */}
+                        <div className='space-y-3'>
+                          <div className='flex items-center justify-center space-x-2'>
+                            <Button
+                              onClick={handleTriggerPayment}
+                              disabled={proofStatus === 'generating'}
+                              className='w-full bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white'
+                            >
+                              {proofStatus === 'generating'
+                                ? 'Triggering...'
+                                : 'Trigger Payment'}
+                            </Button>
+                            <Tooltip delayDuration={300}>
+                              <TooltipTrigger asChild>
+                                <button className='w-6 h-6 bg-blue-100 hover:bg-blue-200 rounded-full flex items-center justify-center transition-colors aspect-square'>
+                                  <span className='text-blue-600 text-xs font-medium'>
+                                    i
+                                  </span>
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent side='top' className='max-w-xs'>
+                                <p className='text-sm'>
+                                  This action will signal your intent to make a
+                                  payment and generate a unique hash that will
+                                  be used to verify your transaction on the
+                                  blockchain. This is the first step in the
+                                  secure payment process.
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+
+                          {/* Skip Trigger Button */}
+                          <div className='flex justify-end'>
+                            <Button
+                              onClick={() => {
+                                setExecutionStep(2);
+                                setExecutionProgress(10);
+                              }}
+                              variant='outline'
+                              size='sm'
+                              className='text-red-600 border-red-300 hover:bg-red-50 text-xs px-3 py-0.5 h-6 rounded-full'
+                            >
+                              Skip Trigger
+                            </Button>
+                          </div>
+
+                          {/* Error Message */}
+                          {proofStatus.includes('error') && (
+                            <div className='bg-red-50 border border-red-200 rounded-lg p-2'>
+                              <div className='flex items-center justify-center space-x-2'>
+                                <div className='h-3 w-3 bg-red-600 rounded-full flex items-center justify-center text-white text-xs'>
+                                  !
+                                </div>
+                                <span className='text-red-800 font-medium text-xs'>
+                                  Payment Trigger Failed
                                 </span>
                               </div>
-                              {proofStatus === 'generating' && (
-                                <p className="text-xs text-blue-600">This may take up to 60 seconds...</p>
-                              )}
-                              {proofStatus === 'error' && (
-                                <p className="text-xs text-red-600">Please try generating the proof again.</p>
-                              )}
-                              {proofStatus === 'timeout' && (
-                                <p className="text-xs text-orange-600">The proof generation took longer than expected. Please try again.</p>
+                              <p className='text-red-700 text-xs mt-1 text-center'>
+                                {paymentTriggerError}
+                              </p>
+                              {proofStatus === 'error_intent' && (
+                                <div className='flex justify-center mt-2'>
+                                  <Button
+                                    onClick={cancelIntent}
+                                    disabled={isCancelingIntent}
+                                    variant='outline'
+                                    size='sm'
+                                    className='text-red-700 border-red-300 hover:bg-red-50 text-xs px-2 py-0.5 h-6'
+                                  >
+                                    {isCancelingIntent
+                                      ? 'Canceling...'
+                                      : 'Cancel Intent'}
+                                  </Button>
+                                </div>
                               )}
                             </div>
                           )}
+
+                          {/* Success Message */}
+                          {proofStatus === 'success' && (
+                            <div className='bg-green-50 border border-green-200 rounded-lg p-3'>
+                              <div className='flex items-center space-x-2'>
+                                <CheckCircle className='h-4 w-4 text-green-600' />
+                                <span className='text-green-800 font-medium text-sm'>
+                                  Payment Triggered Successfully
+                                </span>
+                              </div>
+                              <p className='text-green-700 text-sm mt-1'>
+                                Intent hash generated. You can now proceed to
+                                send your payment.
+                              </p>
+                            </div>
+                          )}
                         </div>
-                      )}
-                      <Button onClick={handleTriggerProof} className="w-full">
-                        Prove Payment
-                      </Button>
-                      {Object.keys(platformMetadata).length > 0 && (
-                        <Button
-                          onClick={() => {
-                            setExecutionStep(3);
-                            setExecutionProgress(40);
-                          }}
-                          className="w-full bg-blue-500 hover:bg-blue-600 text-white"
-                        >
-                          Proceed to Next Step
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {executionStep === 3 && (
-                  <div className="space-y-4">
-                    <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto">
-                      <CheckCircle className="h-8 w-8 text-purple-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold mb-2">Finalize Order</h3>
-                      <p className="text-gray-600 mb-4">
-                        Payment verified! Click below to submit your swap order on-chain.
-                      </p>
-                      <Button onClick={handleFinalizeOrder} disabled={isProcessing} className="w-full">
-                        {isProcessing ? "Submitting..." : "Submit On-Chain"}
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {executionStep === 4 && (
-                  <div className="space-y-4">
-                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                      <CheckCircle className="h-8 w-8 text-green-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold mb-2 text-green-600">Transfer Successful!</h3>
-                      <p className="text-gray-600 mb-4">
-                        Your swap has been completed successfully. <strong>{offrampRecipient}</strong> should receive{" "}
-                        <strong>
-                          {recipientAmount} {toCurrency}
-                        </strong>{" "}
-                        in their <strong>{paymentMethods.find((m) => m.id === toMethod)?.name}</strong> account.
-                      </p>
-                      <Button onClick={handleCloseModal} className="w-full bg-green-600 hover:bg-green-700">
-                        Close
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                
-              </div>
-
-              {/* Trigger Payment Button */}
-              {executionStep === 1 && (
-                <div className="space-y-4">
-                  <Button
-                    onClick={handleTriggerPayment}
-                    className="w-full bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white"
-                  >
-                    Trigger Payment
-                  </Button>
-                </div>
-              )}
-
-              {/* Step Indicators */}
-              <div className="flex justify-between text-xs">
-                {["Send Payment", "Verify Transfer", "Submit On-Chain", "Complete"].map((label, index) => {
-                  const stepNum = index + 1;
-                  const status = getStepStatus(stepNum);
-                  return (
-                    <div key={stepNum} className="flex flex-col items-center space-y-1">
-                      <div
-                        className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${status === "completed"
-                          ? "bg-green-500 text-white"
-                          : status === "current"
-                            ? "bg-blue-500 text-white"
-                            : "bg-gray-200 text-gray-500"
-                          }`}
-                      >
-                        {status === "completed" ? "✓" : stepNum}
                       </div>
-                      <span
-                        className={`text-center ${status === "current" ? "text-blue-600 font-medium" : "text-gray-500"
-                          }`}
-                      >
-                        {label}
-                      </span>
                     </div>
-                  );
-                })}
+                  )}
+
+                  {executionStep === 2 && (
+                    <div className='space-y-4'>
+                      <div className='w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto'>
+                        <Clock className='h-8 w-8 text-yellow-600' />
+                      </div>
+                      <div>
+                        <h3 className='text-lg font-semibold mb-2'>
+                          Send Payment
+                        </h3>
+                        <p className='text-sm text-gray-600 mb-3 leading-relaxed'>
+                          Please send{' '}
+                          <strong>
+                            ${amount} {fromCurrency}
+                          </strong>{' '}
+                          from your{' '}
+                          <strong>
+                            {
+                              paymentMethods.find((m) => m.id === fromMethod)
+                                ?.name
+                            }
+                          </strong>{' '}
+                          account to <strong>{onrampRecipient}</strong>
+                        </p>
+                        <Button
+                          onClick={handleStepAcknowledge}
+                          className='w-full'
+                        >
+                          I have sent the payment
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {executionStep === 3 && (
+                    <div className='space-y-4'>
+                      <div>
+                        <h3 className='text-lg font-semibold mb-2'>
+                          Verifying Transfer
+                        </h3>
+                        <p className='text-sm text-gray-600 mb-3 leading-relaxed'>
+                          We're verifying your payment transfer. This usually
+                          takes a few seconds...
+                        </p>
+                        {Object.keys(platformMetadata).length === 0 ? (
+                          <div className='flex justify-center items-center'>
+                            <Clock className='h-8 w-8 text-yellow-600 animate-spin' />
+                          </div>
+                        ) : (
+                          <div className='space-y-3'>
+                            {/* Proof Generation Status */}
+                            {proofIndex !== null && (
+                              <div className='bg-blue-50 my-2 p-3 rounded-lg border border-blue-200'>
+                                <div className='flex items-center space-x-2'>
+                                  {proofStatus === 'generating' && (
+                                    <Clock className='h-4 w-4 text-blue-600 animate-spin' />
+                                  )}
+                                  {proofStatus === 'success' && (
+                                    <CheckCircle className='h-4 w-4 text-green-600' />
+                                  )}
+                                  {proofStatus === 'error' && (
+                                    <div className='h-4 w-4 bg-red-600 rounded-full flex items-center justify-center text-white text-xs'>
+                                      !
+                                    </div>
+                                  )}
+                                  {proofStatus === 'timeout' && (
+                                    <div className='h-4 w-4 bg-orange-600 rounded-full flex items-center justify-center text-white text-xs'>
+                                      ⏱
+                                    </div>
+                                  )}
+                                  <span className='font-medium text-sm'>
+                                    {proofStatus === 'generating' &&
+                                      'Generating Payment Proof...'}
+                                    {proofStatus === 'success' &&
+                                      'Payment Proof Generated Successfully'}
+                                    {proofStatus === 'error' &&
+                                      'Payment Proof Generation Failed'}
+                                    {proofStatus === 'timeout' &&
+                                      'Payment Proof Generation Timed Out'}
+                                  </span>
+                                </div>
+                                {proofStatus === 'generating' && (
+                                  <p className='text-xs text-blue-600'>
+                                    This may take up to 60 seconds...
+                                  </p>
+                                )}
+                                {proofStatus === 'error' && (
+                                  <p className='text-xs text-red-600'>
+                                    Please try generating the proof again.
+                                  </p>
+                                )}
+                                {proofStatus === 'timeout' && (
+                                  <p className='text-xs text-orange-600'>
+                                    The proof generation took longer than
+                                    expected. Please try again.
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                            {proofIndex === null && (
+                              <div className='bg-red-50 my-2 p-3 rounded-lg border border-red-200'>
+                                <div className='flex items-center space-x-2'>
+                                  <div className='h-4 w-4 bg-red-600 rounded-full flex items-center justify-center text-white text-xs'>
+                                    !
+                                  </div>
+                                  <span className='font-medium text-sm text-red-800'>
+                                    No Matching Payment Found
+                                  </span>
+                                </div>
+                                <p className='text-xs text-red-700 mt-1'>
+                                  Could not find matching proof for{' '}
+                                  {onrampRecipient} of value ${amount}. Please
+                                  make the payment and try again.
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {executionStep === 4 && (
+                    <div className='space-y-4'>
+                      <div className='w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto'>
+                        <CheckCircle className='h-8 w-8 text-purple-600' />
+                      </div>
+                      <div>
+                        <h3 className='text-lg font-semibold mb-2'>
+                          Finalize Order
+                        </h3>
+                        <p className='text-sm text-gray-600 mb-3 leading-relaxed'>
+                          Finalize remittance from {fromMethod} to{' '}
+                          {offrampRecipient} on {toMethod} for {amount}
+                        </p>
+                        <Button
+                          onClick={handleFinalizeOrder}
+                          disabled={isProcessing}
+                          className='w-full'
+                        >
+                          {isProcessing ? 'Submitting...' : 'Submit'}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {executionStep === 5 && (
+                    <div className='space-y-4'>
+                      <div className='w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto'>
+                        <CheckCircle className='h-8 w-8 text-green-600' />
+                      </div>
+                      <div>
+                        <h3 className='text-lg font-semibold mb-2 text-green-600'>
+                          Transfer Successful!
+                        </h3>
+                        <p className='text-sm text-gray-600 mb-3 leading-relaxed'>
+                          Your swap has been completed successfully.{' '}
+                          <strong>{offrampRecipient}</strong> should receive{' '}
+                          <strong>
+                            {recipientAmount} {toCurrency}
+                          </strong>{' '}
+                          in their{' '}
+                          <strong>
+                            {
+                              paymentMethods.find((m) => m.id === toMethod)
+                                ?.name
+                            }
+                          </strong>{' '}
+                          account.
+                        </p>
+                        <Button
+                          onClick={handleCloseModal}
+                          className='w-full bg-green-600 hover:bg-green-700'
+                        >
+                          Close
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Step Indicators */}
+                <div className='flex justify-between text-xs'>
+                  {[
+                    'Start Payment',
+                    'Send Payment',
+                    'Verify Transfer',
+                    'Submit',
+                    'Complete',
+                  ].map((label, index) => {
+                    const stepNum = index + 1;
+                    const status = getStepStatus(stepNum);
+                    return (
+                      <div
+                        key={stepNum}
+                        className='flex flex-col items-center space-y-1'
+                      >
+                        <div
+                          className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
+                            status === 'completed'
+                              ? 'bg-green-500 text-white'
+                              : status === 'current'
+                              ? 'bg-blue-500 text-white'
+                              : 'bg-gray-200 text-gray-500'
+                          }`}
+                        >
+                          {status === 'completed' ? '✓' : stepNum}
+                        </div>
+                        <span
+                          className={`text-center ${
+                            status === 'current'
+                              ? 'text-blue-600 font-medium'
+                              : 'text-gray-500'
+                          }`}
+                        >
+                          {label}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
-    </div>
-  )
+    </TooltipProvider>
+  );
 }
