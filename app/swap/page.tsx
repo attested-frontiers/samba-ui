@@ -76,9 +76,10 @@ export default function SwapInterface() {
     '0x2cb6c7cd80b0b09bfc5fc9c68ad0d7d6fcd6926b88226ed7b1b832c7dd4e10af'
   );
   const [paymentTriggerStatus, setPaymentTriggerStatus] = useState<
-    'idle' | 'loading' | 'success' | 'error'
+    'idle' | 'loading' | 'success' | 'error' | 'error_intent'
   >('idle');
   const [paymentTriggerError, setPaymentTriggerError] = useState<string>('');
+  const [isCancelingIntent, setIsCancelingIntent] = useState(false);
 
   // Proof management state
   const [proofStatus, setProofStatus] = useState<
@@ -271,8 +272,28 @@ export default function SwapInterface() {
   };
 
   const handlePaymentTriggerError = (error: string) => {
-    setPaymentTriggerStatus('error');
-    setPaymentTriggerError(error);
+    if (error.includes('Account has unfulfilled intent')) {
+      setPaymentTriggerStatus('error_intent');
+      setPaymentTriggerError('Payment intent already exists. Please cancel');
+    } else {
+      setPaymentTriggerStatus('error');
+      setPaymentTriggerError('Failed to trigger payment. Please try again.');
+    }
+  };
+
+  const cancelIntent = async () => {
+    setIsCancelingIntent(true);
+    try {
+      await samba.cancelIntent(
+        '0x27a0a07aaa46344ef6d9f13f9b2f1140840f21b6e017fd04ec6828b467a6ade9' as `0x${string}`
+      );
+      setPaymentTriggerStatus('idle');
+      setPaymentTriggerError('');
+    } catch (error) {
+      console.error('Failed to cancel intent:', error);
+    } finally {
+      setIsCancelingIntent(false);
+    }
   };
 
   const handleFinalizeOrder = async () => {
@@ -333,9 +354,9 @@ export default function SwapInterface() {
       );
       setOnrampIntentHash(intentHash);
       handlePaymentTriggerSuccess();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Payment trigger failed:', error);
-      handlePaymentTriggerError('Failed to trigger payment. Please try again.');
+      handlePaymentTriggerError(error.message || 'Unknown error occurred');
     }
   };
 
@@ -925,8 +946,23 @@ export default function SwapInterface() {
                             </Tooltip>
                           </div>
 
+                          {/* Skip Trigger Button */}
+                          <div className='flex justify-center'>
+                            <Button
+                              onClick={() => {
+                                setExecutionStep(2);
+                                setExecutionProgress(10);
+                              }}
+                              variant='outline'
+                              size='sm'
+                              className='text-gray-600 border-gray-300 hover:bg-gray-50 text-xs px-4 py-1'
+                            >
+                              Skip Trigger
+                            </Button>
+                          </div>
+
                           {/* Error Message */}
-                          {paymentTriggerStatus === 'error' && (
+                          {paymentTriggerStatus.includes('error') && (
                             <div className='bg-red-50 border border-red-200 rounded-lg p-2'>
                               <div className='flex items-center justify-center space-x-2'>
                                 <div className='h-3 w-3 bg-red-600 rounded-full flex items-center justify-center text-white text-xs'>
@@ -939,6 +975,21 @@ export default function SwapInterface() {
                               <p className='text-red-700 text-xs mt-1 text-center'>
                                 {paymentTriggerError}
                               </p>
+                              {paymentTriggerStatus === 'error_intent' && (
+                                <div className='flex justify-center mt-2'>
+                                  <Button
+                                    onClick={cancelIntent}
+                                    disabled={isCancelingIntent}
+                                    variant='outline'
+                                    size='sm'
+                                    className='text-red-700 border-red-300 hover:bg-red-50 text-xs px-2 py-0.5 h-6'
+                                  >
+                                    {isCancelingIntent
+                                      ? 'Canceling...'
+                                      : 'Cancel Intent'}
+                                  </Button>
+                                </div>
+                              )}
                             </div>
                           )}
 
@@ -1146,7 +1197,7 @@ export default function SwapInterface() {
                 {/* Step Indicators */}
                 <div className='flex justify-between text-xs'>
                   {[
-                    'Trigger Payment',
+                    'Start Payment',
                     'Send Payment',
                     'Verify Transfer',
                     'Submit',
