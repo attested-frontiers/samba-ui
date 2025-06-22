@@ -238,6 +238,49 @@ export default function SwapInterface() {
     }
   };
 
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAmount(e.target.value);
+  };
+
+  const handleAmountBlur = () => {
+    let value = amount;
+
+    // If empty, set to 0.00
+    if (!value || value.trim() === '') {
+      setAmount('0.00');
+      return;
+    }
+
+    // Remove any non-numeric characters except decimal point
+    value = value.replace(/[^0-9.]/g, '');
+
+    // Ensure only one decimal point
+    const parts = value.split('.');
+    if (parts.length > 2) {
+      value = parts[0] + '.' + parts.slice(1).join('');
+    }
+
+    // If value starts with decimal, add leading 0
+    if (value.startsWith('.')) {
+      value = '0' + value;
+    }
+
+    // If there's a decimal point, ensure exactly 2 decimal places
+    if (value.includes('.')) {
+      const [whole, decimal] = value.split('.');
+      if (decimal.length === 1) {
+        value = whole + '.' + decimal + '0';
+      } else if (decimal.length > 2) {
+        value = whole + '.' + decimal.slice(0, 2);
+      }
+    } else {
+      // If no decimal point, add .00
+      value = value + '.00';
+    }
+
+    setAmount(value);
+  };
+
   const handleContinue = () => {
     if (currentStep === 1) {
       if (validateForm()) {
@@ -755,9 +798,10 @@ export default function SwapInterface() {
                   </span>
                   <Input
                     id='amount'
-                    type='number'
+                    type='text'
                     value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
+                    onChange={handleAmountChange}
+                    onBlur={handleAmountBlur}
                     className='pl-8 pr-16 text-lg'
                     placeholder='0.00'
                     disabled={currentStep !== 1}
