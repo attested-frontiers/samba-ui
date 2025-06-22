@@ -55,7 +55,7 @@ export default function SwapInterface() {
   const [executionProgress, setExecutionProgress] = useState(0)
   const [isProcessing, setIsProcessing] = useState(false)
   const [isPaymentFound, setIsPaymentFound] = useState(false)
-  const [onrampIntentHash, setOnrampIntentHash] = useState<string | null>("0x2cb6c7cd80b0b09bfc5fc9c68ad0d7d6fcd6926b88226ed7b1b832c7dd4e10af")
+  const [onrampIntentHash, setOnrampIntentHash] = useState<string | null>("0x294c12b8d099bd64b9c8dfe6eaa62f487b3c8cdfb879afc3f68c1c221ca02b85")
 
   // Proof management state
   const [proofStatus, setProofStatus] = useState<'idle' | 'generating' | 'success' | 'error' | 'timeout'>('idle')
@@ -362,10 +362,13 @@ export default function SwapInterface() {
       console.log("transfer amount with formatting: ", `- $${amount}`);
       console.log("transfer amount", amount);
       console.log("expected recipient: ", onrampRecipient);
+      console.log("name 0", metadataArray[0]?.recipient);
+      console.log("amount 0", metadataArray[0]?.amount);
+
 
       const match = metadataArray.find(
         (transfer: any) =>
-          transfer.recipient === onrampRecipient && transfer.amount === `- $${amount}`
+          transfer.recipient.toLowerCase() === onrampRecipient.toLowerCase() && transfer.amount === `- $${amount}`
       );
 
       if (match) {
