@@ -63,6 +63,7 @@ const paymentMethods = [
 export default function SwapInterface() {
   const { address } = useAccount();
   const { samba } = useContracts();
+
   const { disconnect } = useDisconnect();
   const [currentStep, setCurrentStep] = useState(1);
   const [proofIndex, setProofIndex] = useState<number | null>(null);
@@ -493,11 +494,12 @@ export default function SwapInterface() {
       console.log('transfer amount with formatting: ', `- $${amount}`);
       console.log('transfer amount', amount);
       console.log('expected recipient: ', onrampRecipient);
-      console.log('metadata: ', metadataArray);
+      console.log('name 0', metadataArray[0]?.recipient);
+      console.log('amount 0', metadataArray[0]?.amount);
 
       const match = metadataArray.find(
         (transfer: any) =>
-          transfer.recipient === onrampRecipient &&
+          transfer.recipient.toLowerCase() === onrampRecipient.toLowerCase() &&
           transfer.amount === `- $${amount}`
       );
 

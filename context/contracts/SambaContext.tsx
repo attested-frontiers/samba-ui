@@ -7,6 +7,7 @@ import {
   IntentSignalRequest,
   PaymentPlatforms,
   QuoteResponse,
+  SignalIntentResponse,
   ZKP2PCurrencies,
 } from '@/lib/types/intents';
 import { currencyKeccak256 } from '@/lib/chain';
@@ -115,6 +116,8 @@ export const SambaContractProvider: React.FC<{ children: React.ReactNode }> = ({
         chainId: chainId.toString(),
       };
 
+      console.log('Signal Intent Payload:', payload);
+
       // get the gating service signature from the api
       let gatingServiceSignature = '';
       try {
@@ -131,8 +134,9 @@ export const SambaContractProvider: React.FC<{ children: React.ReactNode }> = ({
           console.error('Error from Gating Service API:', errorData);
           throw new Error('Error getting gating service signature');
         }
-        const data = await response.json();
-        gatingServiceSignature = data.signature;
+        const data: SignalIntentResponse = await response.json();
+        gatingServiceSignature =
+          data.responseObject.intentData.gatingServiceSignature;
       } catch (error) {
         console.error('Error getting gating service signature:', error);
         throw error;
