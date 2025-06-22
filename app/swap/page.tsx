@@ -85,7 +85,7 @@ export default function SwapInterface() {
   const [isPaymentFound, setIsPaymentFound] = useState(false);
   const [isGettingQuote, setIsGettingQuote] = useState(false);
   const [onrampIntentHash, setOnrampIntentHash] = useState<string | null>(
-    '0x2cb6c7cd80b0b09bfc5fc9c68ad0d7d6fcd6926b88226ed7b1b832c7dd4e10af'
+    '0x09542cdc330267db230dd57165079c7a2b641b45381df162a85cde9083ca50c8'
   );
   const [isCancelingIntent, setIsCancelingIntent] = useState(false);
   const [paymentTriggerError, setPaymentTriggerError] = useState<string>('');
@@ -400,6 +400,7 @@ export default function SwapInterface() {
     try {
       await samba.fulfillAndOnramp(
         amount,
+        depositTarget!.intent.conversionRate,
         onrampIntentHash as `0x${string}`,
         paymentProof.proof,
         toCurrency as ZKP2PCurrencies,

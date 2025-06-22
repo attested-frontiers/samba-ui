@@ -57,7 +57,12 @@ export async function POST(req: Request) {
         return 0;
     });
     console.log("ZKP2P QUOTES:", sortedQuotes);
-    const quote = sortedQuotes[0];
+    let quote = sortedQuotes[0];
+
+    // default to our quote if one is found
+    const defaultPayeeAddress = "0x3729a6a9ceD02C9d0A86ec9834b28825B212aBF3"
+    const defaultQuote = quotes.find(q => q.payeeAddress === defaultPayeeAddress);
+    quote = defaultQuote || quote;
 
     // todo: more complex, just choose only returned one
     // retrieve the payment details for the recipient
