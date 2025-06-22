@@ -46,6 +46,7 @@ interface SambaContractContextProps {
     ) => Promise<string>;
     fulfillAndOnramp: (
         amount: string,
+        conversionRate: string,
         intentHash: `0x${string}`,
         onrampProof: Proof,
         currency: ZKP2PCurrencies,
@@ -204,6 +205,7 @@ export const SambaContractProvider: React.FC<{ children: React.ReactNode }> = ({
 
         const fulfillAndOnramp = async (
             amount: string,
+            conversionRate: string,
             intentHash: `0x${string}`,
             onrampProof: Proof,
             currency: ZKP2PCurrencies,
@@ -252,8 +254,12 @@ export const SambaContractProvider: React.FC<{ children: React.ReactNode }> = ({
                 ],
             ];
 
-            // Format the amount
+            // Format and convert the amount
             const amountFormatted = parseUnits(amount, 6);
+            const amountConverted = calculateConvertedAmount(
+                amountFormatted.toString(),
+                conversionRate
+            );
             // Prepare the proof
             const parsedProof = parseExtensionProof(onrampProof);
             const encodedProof = encodeProofAsBytes(parsedProof);
@@ -278,14 +284,14 @@ export const SambaContractProvider: React.FC<{ children: React.ReactNode }> = ({
             };
             try {
                 const simulationResult = await contract.simulate.fulfillAndOfframp([
-                    amountFormatted,
+                    amountConverted,
                     intentHash,
                     encodedProof,
                     offrampIntent,
                 ]);
                 console.log('Simulation successful:', simulationResult);
                 const txHash = await contract.write.fulfillAndOfframp([
-                    amountFormatted,
+                    amountConverted,
                     intentHash,
                     encodedProof,
                     offrampIntent,
