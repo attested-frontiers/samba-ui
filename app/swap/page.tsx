@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -30,7 +30,7 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { CheckCircle, Clock, ArrowRight } from 'lucide-react';
 import useExtensionProxyProofs from '@/hooks/useExtensionProxyProofs';
-import { platformToVerifier } from '@/lib/utils';
+import { formatDecimalString, platformToVerifier } from '@/lib/utils';
 import {
   PaymentPlatforms,
   QuoteRequest,
@@ -85,7 +85,7 @@ export default function SwapInterface() {
   const [isPaymentFound, setIsPaymentFound] = useState(false);
   const [isGettingQuote, setIsGettingQuote] = useState(false);
   const [onrampIntentHash, setOnrampIntentHash] = useState<string | null>(
-    '0x09542cdc330267db230dd57165079c7a2b641b45381df162a85cde9083ca50c8'
+    '0x2cb6c7cd80b0b09bfc5fc9c68ad0d7d6fcd6926b88226ed7b1b832c7dd4e10af'
   );
   const [isCancelingIntent, setIsCancelingIntent] = useState(false);
   const [paymentTriggerError, setPaymentTriggerError] = useState<string>('');
@@ -112,22 +112,16 @@ export default function SwapInterface() {
     resetProofState,
   } = useExtensionProxyProofs();
 
-  const getExchangeRate = (from: string, to: string) => {
-    // Mock exchange rates - in a real app, these would come from an API
-    const rates: Record<string, Record<string, number>> = {
-      USD: { EUR: 0.85, GBP: 0.73, USD: 1 },
-      EUR: { USD: 1.18, GBP: 0.86, EUR: 1 },
-      GBP: { USD: 1.37, EUR: 1.16, GBP: 1 },
-    };
-    return rates[from]?.[to] || 1;
-  };
+  const exchangeRate = useMemo(() => {
+    if (!depositTarget) return 0;
+    return (
+      1 / Number(formatDecimalString(depositTarget.intent.conversionRate, 18))
+    ).toFixed(2);
+  }, [depositTarget]);
 
-  // useEffect(() => {
-  //   console.log("platformMetadata changded:", platformMetadata);
-  // }, [platformMetadata]);
-
-  const exchangeRate = getExchangeRate(fromCurrency, toCurrency);
-  const recipientAmount = (Number.parseFloat(amount) * exchangeRate).toFixed(2);
+  const recipientAmount = formatDecimalString(
+    depositTarget?.intent.tokenAmount || '0'
+  );
 
   const getAvailableCurrencies = (paymentMethod: string) => {
     const method = paymentMethods.find((m) => m.id === paymentMethod);
@@ -314,6 +308,7 @@ export default function SwapInterface() {
         throw new Error(errorData.error || 'Failed to prepare swap');
       }
       data = (await response.json()) as QuoteResponse;
+      console.log('QUOTE DATA: ', data);
       setDepositTarget(data);
       if (fromMethod === 'venmo') {
         setOnrampRecipient(data.details.depositData.venmoUsername!);
@@ -926,20 +921,18 @@ export default function SwapInterface() {
                           </span>
                         </div>
                         <div className='flex justify-between'>
-                          <span>Recipient Gets:</span>
+                          <span>Fee:</span>
                           <span>
-                            R${recipientAmount} {toCurrency}
+                            $
+                            {(Number(amount) - Number(recipientAmount)).toFixed(
+                              2
+                            )}
                           </span>
                         </div>
-                        <div className='flex justify-between'>
-                          <span>Fee:</span>
-                          <span>$0.99</span>
-                        </div>
                         <div className='border-t pt-2 flex justify-between font-medium'>
-                          <span>Total:</span>
+                          <span>Recipient Amount:</span>
                           <span>
-                            ${(Number.parseFloat(amount) + 0.99).toFixed(2)}{' '}
-                            {fromCurrency}
+                            ${recipientAmount} {fromCurrency}
                           </span>
                         </div>
                       </div>

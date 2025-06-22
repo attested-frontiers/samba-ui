@@ -33,3 +33,17 @@ export function getMarketMakerMetadataPayload(
     processorName: platform
   }
 }
+
+export const formatDecimalString = (decimalString: string, decimals: number = 6): string => {
+  // Pad with leading zeros if needed
+  const padded = decimalString.padStart(decimals + 1, '0');
+
+  // Split into whole and decimal parts
+  const wholePart = padded.slice(0, -decimals) || '0';
+  const decimalPart = padded.slice(-decimals);
+
+  // Take only first 2 digits of decimal part
+  const formattedDecimal = decimalPart.slice(0, 2);
+
+  return `${wholePart}.${formattedDecimal}`;
+};
