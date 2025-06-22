@@ -15,7 +15,9 @@ import { Progress } from "@/components/ui/progress"
 import { CheckCircle, Clock, ArrowRight } from "lucide-react"
 import useExtensionProxyProofs from '@/hooks/useExtensionProxyProofs';
 import { platformToVerifier } from "@/lib/utils"
-import { PaymentPlatforms, ZKP2PCurrencies } from "@/lib/types/intents"
+import { PaymentPlatforms, QuoteRequest, QuoteResponse, ZKP2PCurrencies } from "@/lib/types/intents"
+import { parseUnits } from "viem"
+import { deposit } from "viem/zksync"
 
 
 // Constants for proof polling
@@ -44,6 +46,7 @@ export default function SwapInterface() {
   const [fromMethod, setFromMethod] = useState("venmo")
   const [toMethod, setToMethod] = useState("revolut")
   const [amount, setAmount] = useState("3.00")
+  const [depositTarget, setDepositTarget] = useState<QuoteResponse | null>(null)
   const [onrampRecipient, setOnrampRecipient] = useState("Ian-Brighton")
   const [offrampRecipient, setOfframpRecipient] = useState("ibrighton")
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -199,9 +202,47 @@ export default function SwapInterface() {
     }
   }
 
+  const handleReviewTransaction = async () => {
+    const request: QuoteRequest = {
+      paymentPlatform: fromMethod as PaymentPlatforms,
+      amount: parseUnits(amount, 6).toString(),
+      fiatCurrency: fromCurrency as ZKP2PCurrencies,
+      user: address as `0x${string}`
+    }
+    let data: QuoteResponse;
+    try {
+      const response = await fetch('/api/deposits/quote', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(request)
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('Error preparing swap:', errorData)
+        throw new Error(errorData.error || 'Failed to prepare swap')
+      }
+      data = await response.json() as QuoteResponse
+      console.log("QUOTE DATA: ", data)
+      setDepositTarget(data)
+      if (fromMethod === "venmo") {
+        setOnrampRecipient(data.details.depositData.venmoUsername!)
+      } else if (fromMethod === "revolut") {
+        setOnrampRecipient(data.details.depositData.revolutUsername!)
+      }
+    } catch (error) {
+      console.error('Error preparing swap:', error)
+      setErrors({ general: 'Failed to prepare swap. Please try again later.' });
+      return;
+    }
+  }
+
   const handleContinue = () => {
     if (currentStep === 1) {
       if (validateForm()) {
+        handleReviewTransaction()
         setCurrentStep(2)
       }
     } else if (currentStep === 2) {
@@ -264,13 +305,18 @@ export default function SwapInterface() {
 
   const handleTriggerPayment = async () => {
     // const depositId = 0; // hardcoded for now
-    const depositId = process.env.NEXT_PUBLIC_DEPOSIT_ID
-      ? parseInt(process.env.NEXT_PUBLIC_DEPOSIT_ID)
-      : 0;
+    // const depositId = process.env.NEXT_PUBLIC_DEPOSIT_ID
+    //   ? parseInt(process.env.NEXT_PUBLIC_DEPOSIT_ID)
+    //   : 0;
+    if (depositTarget === null) {
+      console.error("Deposit target is not set or invalid")
+      return
+    }
+    const depositId = depositTarget.intent.intent.depositId
     const verifierAddress = platformToVerifier(fromMethod as PaymentPlatforms);
     const currency = fromCurrency as ZKP2PCurrencies;
     const intentHash = await samba.signalIntent(
-      depositId,
+      depositTarget,
       amount,
       verifierAddress,
       currency

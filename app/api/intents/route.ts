@@ -8,6 +8,7 @@ const ZKP2P_API_KEY = process.env.ZKP2P_API_KEY;
 // checks that the recipient is valid
 export async function POST(req: Request) {
     let intent: IntentSignalRequest;
+    console.log("req", await req.json())
     // parse the mm metadata from the request body
     try {
         intent = await req.json();
