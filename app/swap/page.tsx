@@ -482,6 +482,33 @@ export default function SwapInterface() {
     return Object.keys(platformMetadata).length;
   };
 
+  // Helper to get payment method logo as an <img> tag
+  const getPaymentMethodLogo = (methodId: string, size = 24) => {
+    if (methodId === 'venmo') {
+      return (
+        <img
+          src='/logos/venmo.svg'
+          alt='Venmo'
+          width={size}
+          height={size}
+          className='inline-block align-middle'
+        />
+      );
+    }
+    if (methodId === 'revolut') {
+      return (
+        <img
+          src='/logos/revolut.svg'
+          alt='Revolut'
+          width={size}
+          height={size}
+          className='inline-block align-middle'
+        />
+      );
+    }
+    return null;
+  };
+
   useEffect(() => {
     const checkPaymentMatch = (): boolean => {
       const metadataArray = platformMetadata[fromMethod]?.metadata || [];
@@ -716,7 +743,7 @@ export default function SwapInterface() {
                 <div className='flex items-center justify-between p-4 border rounded-lg'>
                   <div className='flex items-center space-x-3'>
                     <div className='text-2xl'>
-                      {paymentMethods.find((m) => m.id === fromMethod)?.logo}
+                      {getPaymentMethodLogo(fromMethod, 28)}
                     </div>
                     <div>
                       <div className='font-medium'>
@@ -724,12 +751,7 @@ export default function SwapInterface() {
                         {paymentMethods.find((m) => m.id === fromMethod)?.name}
                       </div>
                       <div className='text-sm text-gray-500'>
-                        {currencies.find((c) => c.code === fromCurrency)?.flag}{' '}
-                        {
-                          currencies.find((c) => c.code === fromCurrency)
-                            ?.country
-                        }{' '}
-                        ({fromCurrency})
+                        {currencies.find((c) => c.code === fromCurrency)?.flag} ({fromCurrency})
                       </div>
                     </div>
                   </div>
@@ -770,7 +792,7 @@ export default function SwapInterface() {
                         <SelectContent>
                           {paymentMethods.map((method) => (
                             <SelectItem key={method.id} value={method.id}>
-                              {method.logo} {method.name}
+                              {getPaymentMethodLogo(method.id, 20)} {method.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -790,7 +812,7 @@ export default function SwapInterface() {
                 <div className='flex items-center justify-between p-4 border rounded-lg'>
                   <div className='flex items-center space-x-3'>
                     <div className='text-2xl'>
-                      {paymentMethods.find((m) => m.id === toMethod)?.logo}
+                      {getPaymentMethodLogo(toMethod, 28)}
                     </div>
                     <div>
                       <div className='font-medium'>
@@ -798,9 +820,7 @@ export default function SwapInterface() {
                         {paymentMethods.find((m) => m.id === toMethod)?.name}
                       </div>
                       <div className='text-sm text-gray-500'>
-                        {currencies.find((c) => c.code === toCurrency)?.flag}{' '}
-                        {currencies.find((c) => c.code === toCurrency)?.country}{' '}
-                        ({toCurrency})
+                        {currencies.find((c) => c.code === toCurrency)?.flag} ({toCurrency})
                       </div>
                     </div>
                   </div>
@@ -832,8 +852,7 @@ export default function SwapInterface() {
                         </SelectContent>
                       </Select>
                       <div className='w-32 px-3 py-2 bg-gray-100 rounded-md flex items-center text-sm text-gray-600'>
-                        {paymentMethods.find((m) => m.id === toMethod)?.logo}{' '}
-                        {paymentMethods.find((m) => m.id === toMethod)?.name}
+                        {getPaymentMethodLogo(toMethod, 20)} {paymentMethods.find((m) => m.id === toMethod)?.name}
                       </div>
                     </div>
                   )}
