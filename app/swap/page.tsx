@@ -884,19 +884,6 @@ export default function SwapInterface() {
                 )}
               </div>
 
-              {/* Exchange Rate Info */}
-              {amount && Number.parseFloat(amount) > 0 && (
-                <div className='bg-gray-50 p-4 rounded-lg space-y-2'>
-                  <div className='text-sm text-gray-600'>
-                    Exchange Rate: 1.00 {fromCurrency} ={' '}
-                    {exchangeRate.toFixed(4)} {toCurrency}
-                  </div>
-                  <div className='text-sm font-medium'>
-                    Recipient will get: {recipientAmount} {toCurrency}
-                  </div>
-                </div>
-              )}
-
               {/* Transaction Summary for Review/Confirm */}
               {currentStep >= 2 && (
                 <div className='bg-blue-50 p-4 rounded-lg space-y-3'>
