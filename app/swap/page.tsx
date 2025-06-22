@@ -371,6 +371,8 @@ export default function SwapInterface() {
     setExecutionProgress(0);
     setCurrentStep(1);
     setIsProcessing(false);
+    setProofStatus('idle');
+    setProofIndex(null);
   };
 
   // todo: this actually should open payment link byt being coopted
@@ -959,7 +961,7 @@ export default function SwapInterface() {
                         <h3 className='text-lg font-semibold mb-2'>
                           Trigger Payment
                         </h3>
-                        <p className='text-gray-600 mb-4'>
+                        <p className='text-sm text-gray-600 mb-3 leading-relaxed'>
                           Click the button below to initiate the payment process
                           and generate the necessary intent hash for your
                           transaction.
@@ -1073,7 +1075,7 @@ export default function SwapInterface() {
                         <h3 className='text-lg font-semibold mb-2'>
                           Send Payment
                         </h3>
-                        <p className='text-gray-600 mb-4'>
+                        <p className='text-sm text-gray-600 mb-3 leading-relaxed'>
                           Please send{' '}
                           <strong>
                             ${amount} {fromCurrency}
@@ -1103,7 +1105,7 @@ export default function SwapInterface() {
                         <h3 className='text-lg font-semibold mb-2'>
                           Verifying Transfer
                         </h3>
-                        <p className='text-gray-600'>
+                        <p className='text-sm text-gray-600 mb-3 leading-relaxed'>
                           We're verifying your payment transfer. This usually
                           takes a few seconds...
                         </p>
@@ -1194,7 +1196,7 @@ export default function SwapInterface() {
                         <h3 className='text-lg font-semibold mb-2'>
                           Finalize Order
                         </h3>
-                        <p className='text-gray-600 mb-4'>
+                        <p className='text-sm text-gray-600 mb-3 leading-relaxed'>
                           Finalize remittance from {fromMethod} to{' '}
                           {offrampRecipient} on {toMethod} for {amount}
                         </p>
@@ -1218,7 +1220,7 @@ export default function SwapInterface() {
                         <h3 className='text-lg font-semibold mb-2 text-green-600'>
                           Transfer Successful!
                         </h3>
-                        <p className='text-gray-600 mb-4'>
+                        <p className='text-sm text-gray-600 mb-3 leading-relaxed'>
                           Your swap has been completed successfully.{' '}
                           <strong>{offrampRecipient}</strong> should receive{' '}
                           <strong>
