@@ -83,6 +83,7 @@ export default function SwapInterface() {
   const [executionProgress, setExecutionProgress] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPaymentFound, setIsPaymentFound] = useState(false);
+  const [isGettingQuote, setIsGettingQuote] = useState(false);
   const [onrampIntentHash, setOnrampIntentHash] = useState<string | null>(
     '0x2cb6c7cd80b0b09bfc5fc9c68ad0d7d6fcd6926b88226ed7b1b832c7dd4e10af'
   );
@@ -290,6 +291,7 @@ export default function SwapInterface() {
   };
 
   const handleReviewTransaction = async () => {
+    setIsGettingQuote(true);
     const request: QuoteRequest = {
       paymentPlatform: fromMethod as PaymentPlatforms,
       amount: parseUnits(amount, 6).toString(),
@@ -312,7 +314,6 @@ export default function SwapInterface() {
         throw new Error(errorData.error || 'Failed to prepare swap');
       }
       data = (await response.json()) as QuoteResponse;
-      console.log('QUOTE DATA: ', data);
       setDepositTarget(data);
       if (fromMethod === 'venmo') {
         setOnrampRecipient(data.details.depositData.venmoUsername!);
@@ -321,8 +322,10 @@ export default function SwapInterface() {
       }
     } catch (error) {
       console.error('Error preparing swap:', error);
-      setErrors({ general: 'Failed to prepare swap. Please try again later.' });
+      setErrors({ general: 'Quote not found. Try a different amount.' });
       return;
+    } finally {
+      setIsGettingQuote(false);
     }
   };
 
@@ -887,40 +890,60 @@ export default function SwapInterface() {
               {/* Transaction Summary for Review/Confirm */}
               {currentStep >= 2 && (
                 <div className='bg-blue-50 p-4 rounded-lg space-y-3'>
-                  <h3 className='font-medium text-blue-900'>
-                    Transaction Summary
-                  </h3>
-                  <div className='space-y-2 text-sm'>
-                    <div className='flex justify-between'>
-                      <span>Amount:</span>
-                      <span>
-                        ${amount} {fromCurrency}
+                  {isGettingQuote ? (
+                    <div className='flex items-center justify-center space-x-3 py-4'>
+                      <Clock className='h-5 w-5 text-blue-600 animate-spin' />
+                      <span className='text-blue-800 font-medium'>
+                        Getting quote...
                       </span>
                     </div>
-                    <div className='flex justify-between'>
-                      <span>Exchange Rate:</span>
-                      <span>
-                        1 {fromCurrency} = {exchangeRate} {toCurrency}
+                  ) : errors.general ? (
+                    <div className='flex items-center justify-center space-x-3 py-4'>
+                      <div className='h-5 w-5 bg-red-600 rounded-full flex items-center justify-center text-white text-xs'>
+                        !
+                      </div>
+                      <span className='text-red-800 font-medium'>
+                        {errors.general}
                       </span>
                     </div>
-                    <div className='flex justify-between'>
-                      <span>Recipient Gets:</span>
-                      <span>
-                        R${recipientAmount} {toCurrency}
-                      </span>
-                    </div>
-                    <div className='flex justify-between'>
-                      <span>Fee:</span>
-                      <span>$0.99</span>
-                    </div>
-                    <div className='border-t pt-2 flex justify-between font-medium'>
-                      <span>Total:</span>
-                      <span>
-                        ${(Number.parseFloat(amount) + 0.99).toFixed(2)}{' '}
-                        {fromCurrency}
-                      </span>
-                    </div>
-                  </div>
+                  ) : (
+                    <>
+                      <h3 className='font-medium text-blue-900'>
+                        Transaction Summary
+                      </h3>
+                      <div className='space-y-2 text-sm'>
+                        <div className='flex justify-between'>
+                          <span>Amount:</span>
+                          <span>
+                            ${amount} {fromCurrency}
+                          </span>
+                        </div>
+                        <div className='flex justify-between'>
+                          <span>Exchange Rate:</span>
+                          <span>
+                            1 {fromCurrency} = {exchangeRate} {toCurrency}
+                          </span>
+                        </div>
+                        <div className='flex justify-between'>
+                          <span>Recipient Gets:</span>
+                          <span>
+                            R${recipientAmount} {toCurrency}
+                          </span>
+                        </div>
+                        <div className='flex justify-between'>
+                          <span>Fee:</span>
+                          <span>$0.99</span>
+                        </div>
+                        <div className='border-t pt-2 flex justify-between font-medium'>
+                          <span>Total:</span>
+                          <span>
+                            ${(Number.parseFloat(amount) + 0.99).toFixed(2)}{' '}
+                            {fromCurrency}
+                          </span>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 
