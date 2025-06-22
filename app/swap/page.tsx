@@ -869,38 +869,9 @@ export default function SwapInterface() {
                 )}
               </div>
 
-              {/* Recipient Section (Onramp/Dev) */}
-              <div className='space-y-2'>
-                <div className='flex items-center space-x-2'>
-                  <Label htmlFor='onramp-recipient'>Recipient</Label>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span
-                        className='cursor-pointer text-blue-500'
-                        tabIndex={0}
-                      >
-                        🛈
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <span>
-                        Manually set the interstitial recipient here for MVP -
-                        will be automated later
-                      </span>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-                <Input
-                  id='onramp-recipient'
-                  value={onrampRecipient}
-                  onChange={(e) => setOnrampRecipient(e.target.value)}
-                  placeholder='Enter onramp recipient name'
-                  disabled={currentStep !== 1}
-                />
-              </div>
               {/* Offramp Recipient Section */}
               <div className='space-y-2'>
-                <Label htmlFor='recipient'>Offramp Recipient</Label>
+                <Label htmlFor='recipient'>Recipient</Label>
                 <Input
                   id='recipient'
                   value={offrampRecipient}
