@@ -3,7 +3,7 @@ import { createContext, useContext, useMemo } from "react";
 import { usePublicClient, useWalletClient } from "wagmi";
 import { getContract, parseEventLogs, parseUnits, zeroAddress } from "viem";
 import WrapperArtifact from "@/lib/artifacts/Wrapper.json";
-import { Intent, IntentSignalRequest, PaymentPlatforms, QuoteResponse, ZKP2PCurrencies } from "@/lib/types/intents";
+import { Intent, IntentSignalRequest, PaymentPlatforms, QuoteResponse, SignalIntentResponse, ZKP2PCurrencies } from "@/lib/types/intents";
 import { ANVIL_CHAIN, currencyKeccak256 } from "@/lib/chain";
 import { encodeProofAsBytes, parseExtensionProof, Proof } from "@/lib/types";
 import { getMarketMakerMetadataPayload, platformToVerifier } from "@/lib/utils";
@@ -92,6 +92,8 @@ export const SambaContractProvider: React.FC<{ children: React.ReactNode }> = ({
                 chainId: chainId.toString()
             }
 
+            console.log("Signal Intent Payload:", payload);
+
             // get the gating service signature from the api
             let gatingServiceSignature = "";
             try {
@@ -108,8 +110,8 @@ export const SambaContractProvider: React.FC<{ children: React.ReactNode }> = ({
                     console.error('Error from Gating Service API:', errorData);
                     throw new Error('Error getting gating service signature');
                 }
-                const data = await response.json();
-                gatingServiceSignature = data.signature;
+                const data: SignalIntentResponse = await response.json();
+                gatingServiceSignature = data.responseObject.intentData.gatingServiceSignature;
             } catch (error) {
                 console.error("Error getting gating service signature:", error);
                 throw error;
