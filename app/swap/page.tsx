@@ -89,6 +89,7 @@ export default function SwapInterface() {
   );
   const [isCancelingIntent, setIsCancelingIntent] = useState(false);
   const [paymentTriggerError, setPaymentTriggerError] = useState<string>('');
+  const [submissionError, setSubmissionError] = useState<string>('');
 
   // Proof management state
   const [proofStatus, setProofStatus] = useState<
@@ -347,7 +348,7 @@ export default function SwapInterface() {
   };
 
   const handleStepAcknowledge = () => {
-    setExecutionStep(3);
+    setExecutionStep(4);
     setExecutionProgress(20);
     handleTriggerProof();
   };
@@ -385,10 +386,14 @@ export default function SwapInterface() {
 
   const handleFinalizeOrder = async () => {
     setIsProcessing(true);
+    setSubmissionError('');
     if (!onrampIntentHash || !paymentProof) {
       console.log('onramp intent hash', onrampIntentHash);
       console.log('payment proof', paymentProof);
       console.error('Missing onramp intent hash or payment proof');
+      setSubmissionError(
+        'Missing payment proof or intent hash. Please try again.'
+      );
       setIsProcessing(false);
       return;
     }
@@ -402,10 +407,11 @@ export default function SwapInterface() {
         offrampRecipient,
         toMethod as PaymentPlatforms
       );
-      setExecutionStep(4);
+      setExecutionStep(5);
       setExecutionProgress(80);
     } catch (error) {
       console.error('fulfillAndOnramp failed', error);
+      setSubmissionError('Payment submission failed. Please try again.');
       setIsProcessing(false);
     }
   };
@@ -749,7 +755,8 @@ export default function SwapInterface() {
                         {paymentMethods.find((m) => m.id === fromMethod)?.name}
                       </div>
                       <div className='text-sm text-gray-500'>
-                        {currencies.find((c) => c.code === fromCurrency)?.flag} ({fromCurrency})
+                        {currencies.find((c) => c.code === fromCurrency)?.flag}{' '}
+                        ({fromCurrency})
                       </div>
                     </div>
                   </div>
@@ -790,7 +797,8 @@ export default function SwapInterface() {
                         <SelectContent>
                           {paymentMethods.map((method) => (
                             <SelectItem key={method.id} value={method.id}>
-                              {getPaymentMethodLogo(method.id, 20)} {method.name}
+                              {getPaymentMethodLogo(method.id, 20)}{' '}
+                              {method.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -818,7 +826,8 @@ export default function SwapInterface() {
                         {paymentMethods.find((m) => m.id === toMethod)?.name}
                       </div>
                       <div className='text-sm text-gray-500'>
-                        {currencies.find((c) => c.code === toCurrency)?.flag} ({toCurrency})
+                        {currencies.find((c) => c.code === toCurrency)?.flag} (
+                        {toCurrency})
                       </div>
                     </div>
                   </div>
@@ -850,7 +859,8 @@ export default function SwapInterface() {
                         </SelectContent>
                       </Select>
                       <div className='w-32 px-3 py-2 bg-gray-100 rounded-md flex items-center text-sm text-gray-600'>
-                        {getPaymentMethodLogo(toMethod, 20)} {paymentMethods.find((m) => m.id === toMethod)?.name}
+                        {getPaymentMethodLogo(toMethod, 20)}{' '}
+                        {paymentMethods.find((m) => m.id === toMethod)?.name}
                       </div>
                     </div>
                   )}
@@ -1246,6 +1256,24 @@ export default function SwapInterface() {
                           Finalize remittance from {fromMethod} to{' '}
                           {offrampRecipient} on {toMethod} for {amount}
                         </p>
+
+                        {/* Error Message */}
+                        {submissionError && (
+                          <div className='bg-red-50 border border-red-200 rounded-lg p-3 mb-3'>
+                            <div className='flex items-center space-x-2'>
+                              <div className='h-4 w-4 bg-red-600 rounded-full flex items-center justify-center text-white text-xs'>
+                                !
+                              </div>
+                              <span className='font-medium text-sm text-red-800'>
+                                Submission Failed
+                              </span>
+                            </div>
+                            <p className='text-red-700 text-sm mt-1'>
+                              {submissionError}
+                            </p>
+                          </div>
+                        )}
+
                         <Button
                           onClick={handleFinalizeOrder}
                           disabled={isProcessing}
