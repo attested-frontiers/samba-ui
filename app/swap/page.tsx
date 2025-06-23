@@ -348,7 +348,7 @@ export default function SwapInterface() {
   };
 
   const handleStepAcknowledge = () => {
-    setExecutionStep(4);
+    setExecutionStep(3);
     setExecutionProgress(20);
     handleTriggerProof();
   };
