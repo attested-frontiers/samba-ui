@@ -579,7 +579,7 @@ export default function SwapInterface() {
       // Show success notification
       showBrowserNotification('Payment Proof Generated Successfully! 🎉', {
         body: 'Your payment proof has been generated and verified. You can now proceed with your transaction.',
-        icon: '/placeholder-logo.png',
+        icon: '/samba-logo.png',
       });
 
       // Auto-proceed to next step after 1.5 seconds
@@ -594,7 +594,7 @@ export default function SwapInterface() {
       // Show error notification
       showBrowserNotification('Payment Proof Generation Failed ❌', {
         body: 'There was an error generating your payment proof. Please try again.',
-        icon: '/placeholder-logo.png',
+        icon: '/samba-logo.png',
       });
     } else {
       console.log('⏳ Payment proof still generating...', paymentProof);
@@ -633,7 +633,7 @@ export default function SwapInterface() {
         // Show timeout notification
         showBrowserNotification('Payment Proof Generation Timed Out ⏱️', {
           body: 'The proof generation took longer than expected. Please try again.',
-          icon: '/placeholder-logo.png',
+          icon: '/samba-logo.png',
         });
       }, PROOF_GENERATION_TIMEOUT);
 
@@ -675,9 +675,7 @@ export default function SwapInterface() {
         <header className='container mx-auto px-4 py-6'>
           <nav className='flex items-center justify-between'>
             <div className='flex items-center space-x-2'>
-              <div className='w-8 h-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg flex items-center justify-center'>
-                <span className='text-white font-bold text-sm'>S</span>
-              </div>
+              <img src='/samba-logo.png' alt='Samba' className='w-8 h-8' />
               <span className='text-xl font-bold text-gray-900'>SwapFlow</span>
             </div>
             <div className='flex items-center space-x-4'>
