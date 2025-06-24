@@ -676,7 +676,7 @@ export default function SwapInterface() {
           <nav className='flex items-center justify-between'>
             <div className='flex items-center space-x-2'>
               <img src='/samba-logo.png' alt='Samba' className='w-8 h-8' />
-              <span className='text-xl font-bold text-gray-900'>SwapFlow</span>
+              <span className='text-xl font-bold text-gray-900'>Samba</span>
             </div>
             <div className='flex items-center space-x-4'>
               <div className='flex items-center space-x-2 text-sm text-gray-600'>

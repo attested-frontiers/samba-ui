@@ -44,7 +44,7 @@ export default function LandingPage() {
         <nav className='flex items-center justify-between'>
           <div className='flex items-center'>
             <img src='/samba-logo.png' alt='Samba' className='w-16 h-16' />
-            <span className='text-xl font-bold text-gray-900'>SwapFlow</span>
+            <span className='text-xl font-bold text-gray-900'>Samba</span>
           </div>
           <Button
             onClick={handleConnect}
@@ -89,7 +89,7 @@ export default function LandingPage() {
       <section className='container mx-auto px-4 py-20'>
         <div className='text-center mb-16'>
           <h2 className='text-3xl md:text-4xl font-bold text-gray-900 mb-4'>
-            Why Choose SwapFlow?
+            Why Choose Samba?
           </h2>
           <p className='text-lg text-gray-600 max-w-2xl mx-auto'>
             Built for the modern world, powered by cutting-edge blockchain
@@ -168,7 +168,7 @@ export default function LandingPage() {
               Ready to Start Swapping?
             </h2>
             <p className='text-xl mb-8 opacity-90 max-w-2xl mx-auto'>
-              Join thousands of users who trust SwapFlow for their currency
+              Join thousands of users who trust Samba for their currency
               exchange needs. Connect your wallet and start trading in minutes.
             </p>
             <Button
@@ -186,7 +186,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className='container mx-auto px-4 py-12 border-t'>
         <div className='text-center text-gray-600'>
-          <p>&copy; 2024 SwapFlow. All rights reserved.</p>
+          <p>&copy; 2024 Samba. All rights reserved.</p>
           <div className='flex justify-center space-x-6 mt-4'>
             <Link href='#' className='hover:text-purple-600 transition-colors'>
               Privacy Policy
