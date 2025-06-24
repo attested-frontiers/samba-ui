@@ -7,8 +7,45 @@ export type Intent = {
     to: string,
     verifier: string,
     fiatCurrency: string,
-    chainId: string
+    chainId: string,
 }
+
+export type Quote = {
+  fiatAmount: string;
+  fiatAmountFormatted: string;
+  tokenAmount: string;
+  tokenAmountFormatted: string;
+  paymentMethod: string;
+  payeeAddress: string;
+  conversionRate: string;
+  intent: {
+    depositId: number;
+    amount: string;
+    payeeDetails: string;
+    processorName: string;
+    toAddress: string;
+    fiatCurrencyCode: string;
+    chainId: string;
+  };
+}
+
+export type QuoteResponse = {
+    intent: Quote,
+    details: PayeeDetailsResponse
+}
+
+export type PayeeDetailsResponse = {
+    id: number,
+    processorName: PaymentPlatforms,
+    depositData: {
+        venmoUsername?: string,
+        revolutUsername?: string,
+        telegramUsername?: string
+    }
+    hashedOnchainId: string,
+    createdAt: string
+}
+
 
 export type IntentSignalRequest = {
   processorName: string;
@@ -37,6 +74,13 @@ export type SignalIntentResponse = {
   };
   statusCode: number;
 };
+
+export type QuoteRequest = {
+    paymentPlatform: PaymentPlatforms,
+    fiatCurrency: ZKP2PCurrencies,
+    user: string,
+    amount: string
+}
 
 
 export type MarketMakerMetadata = {

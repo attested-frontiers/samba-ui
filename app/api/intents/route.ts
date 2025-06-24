@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { IntentSignalRequest, SignalIntentResponse } from '@/lib/types/intents';
 
 const API_URL_BASE = process.env.ZKP2P_API_URL || 'https://api.zkp2p.xyz/v1';
-const API_URL = `${API_URL_BASE}/intent`;
+const API_URL = `${API_URL_BASE}/verify/intent`;
 const ZKP2P_API_KEY = process.env.ZKP2P_API_KEY;
 
 // checks that the recipient is valid
