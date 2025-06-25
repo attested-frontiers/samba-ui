@@ -19,8 +19,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ArrowUpDown, LogOut, User } from 'lucide-react';
-import { useAccount, useDisconnect } from 'wagmi';
-import { useContracts } from '@/context/contracts';
+import { useAuth } from '@/context/AuthContext';
+// import { useAccount, useDisconnect } from 'wagmi';
+// import { useContracts } from '@/context/contracts';
 import {
   Dialog,
   DialogContent,
@@ -61,10 +62,14 @@ const paymentMethods = [
 ];
 
 export default function SwapInterface() {
-  const { address } = useAccount();
-  const { samba } = useContracts();
-
-  const { disconnect } = useDisconnect();
+  const { user, loading, signOut } = useAuth();
+  // const { address } = useAccount();
+  // const { samba } = useContracts();
+  // const { disconnect } = useDisconnect();
+  
+  // Temporary placeholder values for web3 functionality
+  const address = '0x1234...5678'; // Placeholder
+  const samba = null; // Will be replaced with backend API calls
   const [currentStep, setCurrentStep] = useState(1);
   const [proofIndex, setProofIndex] = useState<number | null>(null);
   const [fromCurrency, setFromCurrency] = useState('USD');
@@ -291,7 +296,7 @@ export default function SwapInterface() {
       paymentPlatform: fromMethod as PaymentPlatforms,
       amount: parseUnits(amount, 6).toString(),
       fiatCurrency: fromCurrency as ZKP2PCurrencies,
-      user: address as `0x${string}`,
+      user: '0x1234567890123456789012345678901234567890' as `0x${string}`, // Placeholder address
     };
     let data: QuoteResponse;
     try {
@@ -372,9 +377,11 @@ export default function SwapInterface() {
   const cancelIntent = async () => {
     setIsCancelingIntent(true);
     try {
-      await samba.cancelIntent(
-        '0x27a0a07aaa46344ef6d9f13f9b2f1140840f21b6e017fd04ec6828b467a6ade9' as `0x${string}`
-      );
+      // TODO: Replace with backend API call
+      // await samba.cancelIntent(
+      //   '0x27a0a07aaa46344ef6d9f13f9b2f1140840f21b6e017fd04ec6828b467a6ade9' as `0x${string}`
+      // );
+      console.log('Cancel intent - to be implemented with backend API');
       setProofStatus('idle');
       setPaymentTriggerError('');
     } catch (error) {
@@ -398,15 +405,17 @@ export default function SwapInterface() {
       return;
     }
     try {
-      await samba.fulfillAndOnramp(
-        amount,
-        depositTarget!.intent.conversionRate,
-        onrampIntentHash as `0x${string}`,
-        paymentProof.proof,
-        toCurrency as ZKP2PCurrencies,
-        offrampRecipient,
-        toMethod as PaymentPlatforms
-      );
+      // TODO: Replace with backend API call
+      // await samba.fulfillAndOnramp(
+      //   amount,
+      //   depositTarget!.intent.conversionRate,
+      //   onrampIntentHash as `0x${string}`,
+      //   paymentProof.proof,
+      //   toCurrency as ZKP2PCurrencies,
+      //   offrampRecipient,
+      //   toMethod as PaymentPlatforms
+      // );
+      console.log('Fulfill and onramp - to be implemented with backend API');
       setExecutionStep(5);
       setExecutionProgress(80);
     } catch (error) {
@@ -425,6 +434,7 @@ export default function SwapInterface() {
     setProofStatus('idle');
     setProofIndex(null);
   };
+
 
   // todo: this actually should open payment link byt being coopted
   // to signal intent
@@ -447,12 +457,14 @@ export default function SwapInterface() {
         fromMethod as PaymentPlatforms
       );
       const currency = fromCurrency as ZKP2PCurrencies;
-      const intentHash = await samba.signalIntent(
-        depositTarget,
-        amount,
-        verifierAddress,
-        currency
-      );
+      // TODO: Replace with backend API call
+      // const intentHash = await samba.signalIntent(
+      //   depositTarget,
+      //   amount,
+      //   verifierAddress,
+      //   currency
+      // );
+      const intentHash = '0x1234567890abcdef'; // Placeholder
       setOnrampIntentHash(intentHash);
       handlePaymentTriggerSuccess();
     } catch (error: any) {
@@ -681,13 +693,16 @@ export default function SwapInterface() {
             <div className='flex items-center space-x-4'>
               <div className='flex items-center space-x-2 text-sm text-gray-600'>
                 <User className='h-4 w-4' />
-                <span>
-                  {address?.slice(0, 6)}...{address?.slice(-4)}
-                </span>
+                <span>{user?.email || 'user@example.com'}</span>
               </div>
-              <Button variant='outline' size='sm' onClick={() => disconnect()}>
+              <Button 
+                variant='outline' 
+                size='sm' 
+                onClick={() => signOut()}
+                disabled={loading}
+              >
                 <LogOut className='h-4 w-4 mr-2' />
-                Disconnect
+                {loading ? 'Signing out...' : 'Sign Out'}
               </Button>
             </div>
           </nav>

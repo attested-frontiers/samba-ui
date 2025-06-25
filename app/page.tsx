@@ -11,30 +11,29 @@ import {
 } from '@/components/ui/card';
 import { ArrowRight, Shield, Zap, Globe, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
-import { useAccount, useConnect, useDisconnect } from 'wagmi';
-import { injected } from 'wagmi/connectors';
+import { useAuth } from '@/context/AuthContext';
 import SwapInterface from './swap/page';
 
 export default function LandingPage() {
-  const { address, isConnected } = useAccount();
-  const { connect } = useConnect();
-  const { disconnect } = useDisconnect();
+  const { user, loading, error, signIn, clearError } = useAuth();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  if (!mounted) {
+  if (!mounted || loading) {
     return null;
   }
 
-  if (isConnected) {
+  // If user is authenticated, show swap interface
+  if (user) {
     return <SwapInterface />;
   }
 
-  const handleConnect = () => {
-    connect({ connector: injected() });
+  const handleSignIn = async () => {
+    clearError(); // Clear any previous errors
+    await signIn();
   };
 
   return (
@@ -47,13 +46,35 @@ export default function LandingPage() {
             <span className='text-xl font-bold text-gray-900'>Samba</span>
           </div>
           <Button
-            onClick={handleConnect}
+            onClick={handleSignIn}
+            disabled={loading}
             className='bg-gradient-to-r from-primary to-secondary hover:from-primary/80 hover:to-secondary/80'
           >
-            Connect Wallet
+            {loading ? 'Signing in...' : 'Sign in with Google'}
           </Button>
         </nav>
       </header>
+
+      {/* Error Display */}
+      {error && (
+        <div className='container mx-auto px-4 pt-4'>
+          <div className='max-w-md mx-auto bg-red-50 border border-red-200 rounded-lg p-4'>
+            <div className='flex items-center space-x-2'>
+              <div className='h-4 w-4 bg-red-600 rounded-full flex items-center justify-center text-white text-xs'>
+                !
+              </div>
+              <span className='text-red-800 font-medium text-sm'>Sign In Error</span>
+            </div>
+            <p className='text-red-700 text-sm mt-1'>{error}</p>
+            <button
+              onClick={clearError}
+              className='text-red-600 hover:text-red-800 text-xs underline mt-2'
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Hero Section */}
       <section className='container mx-auto px-4 py-20'>
@@ -72,11 +93,16 @@ export default function LandingPage() {
           </p>
           <div className='flex flex-col sm:flex-row gap-4 justify-center'>
             <Button
-              onClick={handleConnect}
+              onClick={handleSignIn}
+              disabled={loading}
               size='lg'
               className='bg-gradient-to-r from-primary to-secondary hover:from-primary/80 hover:to-secondary/80 text-lg px-8 py-3'
             >
-              Get Started <ArrowRight className='ml-2 h-5 w-5' />
+              {loading ? 'Signing in...' : (
+                <>
+                  Get Started <ArrowRight className='ml-2 h-5 w-5' />
+                </>
+              )}
             </Button>
             <Button variant='outline' size='lg' className='text-lg px-8 py-3'>
               Learn More
@@ -169,15 +195,20 @@ export default function LandingPage() {
             </h2>
             <p className='text-xl mb-8 opacity-90 max-w-2xl mx-auto'>
               Join thousands of users who trust Samba for their currency
-              exchange needs. Connect your wallet and start trading in minutes.
+              exchange needs. Sign in with Google and start trading in minutes.
             </p>
             <Button
-              onClick={handleConnect}
+              onClick={handleSignIn}
+              disabled={loading}
               size='lg'
               variant='secondary'
               className='text-lg px-8 py-3 bg-white text-primary hover:bg-gray-100'
             >
-              Connect Wallet Now <ArrowRight className='ml-2 h-5 w-5' />
+              {loading ? 'Signing in...' : (
+                <>
+                  Sign in with Google <ArrowRight className='ml-2 h-5 w-5' />
+                </>
+              )}
             </Button>
           </CardContent>
         </Card>
