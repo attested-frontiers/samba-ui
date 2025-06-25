@@ -1,27 +1,31 @@
-import type React from "react"
-import type { Metadata } from "next"
-import { Inter } from "next/font/google"
-import "./globals.css"
-import { Providers } from "./providers"
+import type React from 'react';
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
+import { Providers } from './providers';
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: "SwapFlow - Cross-Border Currency Exchange",
-  description: "Seamless cross-border currency swaps powered by blockchain technology",
-    generator: 'v0.dev'
-}
+  title: 'Samba - Cross-Border Currency Exchange',
+  description:
+    'Seamless cross-border currency swaps powered by blockchain technology',
+  generator: 'v0.dev',
+  icons: {
+    icon: '/favicon.ico',
+  },
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang='en'>
       <body className={inter.className}>
         <Providers>{children}</Providers>
       </body>
     </html>
-  )
+  );
 }
