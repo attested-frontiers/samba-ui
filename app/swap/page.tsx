@@ -670,7 +670,7 @@ export default function SwapInterface() {
 
   return (
     <TooltipProvider>
-      <div className='min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50'>
+      <div className='min-h-screen bg-gradient-to-br from-primary/5 via-white to-secondary/5'>
         {/* Header */}
         <header className='container mx-auto px-4 py-6'>
           <nav className='flex items-center justify-between'>
@@ -701,7 +701,7 @@ export default function SwapInterface() {
                 <div
                   className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
                     currentStep >= step.number
-                      ? 'bg-purple-600 border-purple-600 text-white'
+                      ? 'bg-primary border-primary text-white'
                       : 'border-gray-300 text-gray-400'
                   }`}
                 >
@@ -711,7 +711,7 @@ export default function SwapInterface() {
                   <div
                     className={`text-sm font-medium ${
                       currentStep >= step.number
-                        ? 'text-purple-600'
+                        ? 'text-primary'
                         : 'text-gray-400'
                     }`}
                   >
@@ -721,9 +721,7 @@ export default function SwapInterface() {
                 {index < steps.length - 1 && (
                   <div
                     className={`w-16 h-0.5 mr-8 ${
-                      currentStep > step.number
-                        ? 'bg-purple-600'
-                        : 'bg-gray-300'
+                      currentStep > step.number ? 'bg-primary' : 'bg-gray-300'
                     }`}
                   />
                 )}
@@ -912,11 +910,11 @@ export default function SwapInterface() {
 
               {/* Transaction Summary for Review/Confirm */}
               {currentStep >= 2 && (
-                <div className='bg-blue-50 p-4 rounded-lg space-y-3'>
+                <div className='bg-secondary/10 p-4 rounded-lg space-y-3'>
                   {isGettingQuote ? (
                     <div className='flex items-center justify-center space-x-3 py-4'>
-                      <Clock className='h-5 w-5 text-blue-600 animate-spin' />
-                      <span className='text-blue-800 font-medium'>
+                      <Clock className='h-5 w-5 text-secondary animate-spin' />
+                      <span className='text-secondary font-medium'>
                         Getting quote...
                       </span>
                     </div>
@@ -931,7 +929,7 @@ export default function SwapInterface() {
                     </div>
                   ) : (
                     <>
-                      <h3 className='font-medium text-blue-900'>
+                      <h3 className='font-medium text-secondary'>
                         Transaction Summary
                       </h3>
                       <div className='space-y-2 text-sm'>
@@ -981,7 +979,7 @@ export default function SwapInterface() {
                 )}
                 <Button
                   onClick={handleContinue}
-                  className='flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700'
+                  className='flex-1 bg-gradient-to-r from-primary to-secondary hover:from-primary/80 hover:to-secondary/80'
                 >
                   {currentStep === 1 && 'Continue'}
                   {currentStep === 2 && 'Confirm'}
@@ -1008,8 +1006,8 @@ export default function SwapInterface() {
                 <div className='space-y-2'>
                   {executionStep === 1 && (
                     <div className='space-y-4'>
-                      <div className='w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto'>
-                        <ArrowRight className='h-8 w-8 text-blue-600' />
+                      <div className='w-16 h-16 bg-secondary/20 rounded-full flex items-center justify-center mx-auto'>
+                        <ArrowRight className='h-8 w-8 text-secondary' />
                       </div>
                       <div>
                         <h3 className='text-lg font-semibold mb-2'>
@@ -1035,8 +1033,8 @@ export default function SwapInterface() {
                             </Button>
                             <Tooltip delayDuration={300}>
                               <TooltipTrigger asChild>
-                                <button className='w-6 h-6 bg-blue-100 hover:bg-blue-200 rounded-full flex items-center justify-center transition-colors aspect-square'>
-                                  <span className='text-blue-600 text-xs font-medium'>
+                                <button className='w-6 h-6 bg-secondary/20 hover:bg-secondary/30 rounded-full flex items-center justify-center transition-colors aspect-square'>
+                                  <span className='text-secondary text-xs font-medium'>
                                     i
                                   </span>
                                 </button>
@@ -1171,10 +1169,10 @@ export default function SwapInterface() {
                           <div className='space-y-3'>
                             {/* Proof Generation Status */}
                             {proofIndex !== null && (
-                              <div className='bg-blue-50 my-2 p-3 rounded-lg border border-blue-200'>
+                              <div className='bg-secondary/10 my-2 p-3 rounded-lg border border-secondary/20'>
                                 <div className='flex items-center space-x-2'>
                                   {proofStatus === 'generating' && (
-                                    <Clock className='h-4 w-4 text-blue-600 animate-spin' />
+                                    <Clock className='h-4 w-4 text-secondary animate-spin' />
                                   )}
                                   {proofStatus === 'success' && (
                                     <CheckCircle className='h-4 w-4 text-green-600' />
@@ -1201,7 +1199,7 @@ export default function SwapInterface() {
                                   </span>
                                 </div>
                                 {proofStatus === 'generating' && (
-                                  <p className='text-xs text-blue-600'>
+                                  <p className='text-xs text-secondary'>
                                     This may take up to 60 seconds...
                                   </p>
                                 )}
@@ -1243,8 +1241,8 @@ export default function SwapInterface() {
 
                   {executionStep === 4 && (
                     <div className='space-y-4'>
-                      <div className='w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto'>
-                        <CheckCircle className='h-8 w-8 text-purple-600' />
+                      <div className='w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto'>
+                        <CheckCircle className='h-8 w-8 text-primary' />
                       </div>
                       <div>
                         <h3 className='text-lg font-semibold mb-2'>
@@ -1339,7 +1337,7 @@ export default function SwapInterface() {
                             status === 'completed'
                               ? 'bg-green-500 text-white'
                               : status === 'current'
-                              ? 'bg-blue-500 text-white'
+                              ? 'bg-secondary text-white'
                               : 'bg-gray-200 text-gray-500'
                           }`}
                         >
@@ -1348,7 +1346,7 @@ export default function SwapInterface() {
                         <span
                           className={`text-center ${
                             status === 'current'
-                              ? 'text-blue-600 font-medium'
+                              ? 'text-secondary font-medium'
                               : 'text-gray-500'
                           }`}
                         >

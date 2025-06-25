@@ -38,7 +38,7 @@ export default function LandingPage() {
   };
 
   return (
-    <div className='min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50'>
+    <div className='min-h-screen bg-gradient-to-br from-primary/5 via-white to-secondary/5'>
       {/* Header */}
       <header className='container mx-auto px-4 py-6'>
         <nav className='flex items-center justify-between'>
@@ -48,7 +48,7 @@ export default function LandingPage() {
           </div>
           <Button
             onClick={handleConnect}
-            className='bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700'
+            className='bg-gradient-to-r from-primary to-secondary hover:from-primary/80 hover:to-secondary/80'
           >
             Connect Wallet
           </Button>
@@ -60,7 +60,7 @@ export default function LandingPage() {
         <div className='text-center max-w-4xl mx-auto'>
           <h1 className='text-5xl md:text-6xl font-bold text-gray-900 mb-6'>
             Seamless Cross-Border
-            <span className='bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent'>
+            <span className='bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent'>
               {' '}
               Currency Swaps
             </span>
@@ -74,7 +74,7 @@ export default function LandingPage() {
             <Button
               onClick={handleConnect}
               size='lg'
-              className='bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-lg px-8 py-3'
+              className='bg-gradient-to-r from-primary to-secondary hover:from-primary/80 hover:to-secondary/80 text-lg px-8 py-3'
             >
               Get Started <ArrowRight className='ml-2 h-5 w-5' />
             </Button>
@@ -100,8 +100,8 @@ export default function LandingPage() {
         <div className='grid md:grid-cols-2 lg:grid-cols-4 gap-8'>
           <Card className='text-center border-0 shadow-lg hover:shadow-xl transition-shadow'>
             <CardHeader>
-              <div className='w-12 h-12 bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4'>
-                <Shield className='h-6 w-6 text-purple-600' />
+              <div className='w-12 h-12 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-lg flex items-center justify-center mx-auto mb-4'>
+                <Shield className='h-6 w-6 text-primary' />
               </div>
               <CardTitle className='text-xl'>Secure</CardTitle>
             </CardHeader>
@@ -115,8 +115,8 @@ export default function LandingPage() {
 
           <Card className='text-center border-0 shadow-lg hover:shadow-xl transition-shadow'>
             <CardHeader>
-              <div className='w-12 h-12 bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4'>
-                <Zap className='h-6 w-6 text-purple-600' />
+              <div className='w-12 h-12 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-lg flex items-center justify-center mx-auto mb-4'>
+                <Zap className='h-6 w-6 text-primary' />
               </div>
               <CardTitle className='text-xl'>Lightning Fast</CardTitle>
             </CardHeader>
@@ -130,8 +130,8 @@ export default function LandingPage() {
 
           <Card className='text-center border-0 shadow-lg hover:shadow-xl transition-shadow'>
             <CardHeader>
-              <div className='w-12 h-12 bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4'>
-                <Globe className='h-6 w-6 text-purple-600' />
+              <div className='w-12 h-12 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-lg flex items-center justify-center mx-auto mb-4'>
+                <Globe className='h-6 w-6 text-primary' />
               </div>
               <CardTitle className='text-xl'>Global Reach</CardTitle>
             </CardHeader>
@@ -145,8 +145,8 @@ export default function LandingPage() {
 
           <Card className='text-center border-0 shadow-lg hover:shadow-xl transition-shadow'>
             <CardHeader>
-              <div className='w-12 h-12 bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4'>
-                <TrendingUp className='h-6 w-6 text-purple-600' />
+              <div className='w-12 h-12 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-lg flex items-center justify-center mx-auto mb-4'>
+                <TrendingUp className='h-6 w-6 text-primary' />
               </div>
               <CardTitle className='text-xl'>Best Rates</CardTitle>
             </CardHeader>
@@ -162,7 +162,7 @@ export default function LandingPage() {
 
       {/* CTA Section */}
       <section className='container mx-auto px-4 py-20'>
-        <Card className='bg-gradient-to-r from-purple-600 to-blue-600 border-0 text-white'>
+        <Card className='bg-gradient-to-r from-primary to-secondary border-0 text-white'>
           <CardContent className='text-center py-16'>
             <h2 className='text-3xl md:text-4xl font-bold mb-4'>
               Ready to Start Swapping?
@@ -175,7 +175,7 @@ export default function LandingPage() {
               onClick={handleConnect}
               size='lg'
               variant='secondary'
-              className='text-lg px-8 py-3 bg-white text-purple-600 hover:bg-gray-100'
+              className='text-lg px-8 py-3 bg-white text-primary hover:bg-gray-100'
             >
               Connect Wallet Now <ArrowRight className='ml-2 h-5 w-5' />
             </Button>
@@ -188,13 +188,13 @@ export default function LandingPage() {
         <div className='text-center text-gray-600'>
           <p>&copy; 2024 Samba. All rights reserved.</p>
           <div className='flex justify-center space-x-6 mt-4'>
-            <Link href='#' className='hover:text-purple-600 transition-colors'>
+            <Link href='#' className='hover:text-primary transition-colors'>
               Privacy Policy
             </Link>
-            <Link href='#' className='hover:text-purple-600 transition-colors'>
+            <Link href='#' className='hover:text-primary transition-colors'>
               Terms of Service
             </Link>
-            <Link href='#' className='hover:text-purple-600 transition-colors'>
+            <Link href='#' className='hover:text-primary transition-colors'>
               Support
             </Link>
           </div>
