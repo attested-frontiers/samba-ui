@@ -50,7 +50,7 @@ export default function LandingPage() {
             disabled={loading}
             className='bg-gradient-to-r from-primary to-secondary hover:from-primary/80 hover:to-secondary/80'
           >
-            {loading ? 'Signing in...' : 'Sign in with Google'}
+            {loading ? 'Signing in...' : 'Sign In'}
           </Button>
         </nav>
       </header>
