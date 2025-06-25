@@ -7,7 +7,7 @@ import WrapperArtifact from './artifacts/Wrapper.json';
 import { getContractAddresses } from './contract-utils';
 
 // FAKE CREDENTIALS - YOU WILL REPLACE WITH .env
-const PRIVATE_KEY = process.env.BACKEND_PRIV_KEY as `0x${string}`;
+const PRIVATE_KEY = `0x${process.env.BACKEND_PRIV_KEY!}` as `0x${string}`;
   const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL ||
   'https://mainnet.base.org';
   
@@ -36,7 +36,7 @@ export function createBackendClients() {
   const chain = getChain();
   
   // Create account from private key
-  const account = privateKeyToAccount(PRIVATE_KEY as `0x${string}`);
+  const account = privateKeyToAccount(PRIVATE_KEY);
   
   // Create public client for reading
   const publicClient = createPublicClient({

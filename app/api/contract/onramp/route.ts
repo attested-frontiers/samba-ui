@@ -6,9 +6,14 @@ import {
   waitForTransactionReceipt 
 } from '@/lib/contract-client';
 import {
-  prepareFulfillAndOnrampParams,
+  calculateConvertedAmount,
   handleContractError
 } from '@/lib/contract-utils';
+import { currencyKeccak256 } from '@/lib/chain';
+import { getMarketMakerMetadataPayload, platformToVerifier } from '@/lib/utils';
+import { parseExtensionProof, encodeProofAsBytes } from '@/lib/types';
+import { parseUnits } from 'viem';
+import { ethers } from 'ethers';
 import { 
   PaymentPlatforms, 
   ZKP2PCurrencies 
@@ -69,14 +74,82 @@ export async function POST(request: NextRequest): Promise<NextResponse<FulfillAn
 
     // 3. Prepare fulfill and onramp parameters
     console.log(`🔧 Preparing fulfill and onramp parameters...`);
-    const { amountConverted, encodedProof, offrampIntent } = await prepareFulfillAndOnrampParams(
-      amount,
-      conversionRate,
-      onrampProof,
-      currency,
+    
+    // Get the payee details hash from ZKP2P API
+    const marketMakerMetadataPayload = getMarketMakerMetadataPayload(
       destinationUsername,
       destinationPlatform
     );
+    
+    console.log("Validating market maker with ZKP2P:", marketMakerMetadataPayload);
+    
+    const API_URL_BASE = process.env.ZKP2P_API_URL || 'https://api.zkp2p.xyz/v1';
+    const API_URL = `${API_URL_BASE}/makers/create`;
+    const ZKP2P_API_KEY = process.env.ZKP2P_API_KEY;
+
+    if (!ZKP2P_API_KEY) {
+      throw new Error('ZKP2P_API_KEY not configured');
+    }
+
+    const validationResponse = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": ZKP2P_API_KEY
+      },
+      body: JSON.stringify(marketMakerMetadataPayload)
+    });
+
+    if (!validationResponse.ok) {
+      const errorData = await validationResponse.json();
+      console.error('Error from ZKP2P API:', errorData);
+      throw new Error('Error validating market maker with ZKP2P');
+    }
+
+    const validationData = await validationResponse.json();
+    const payeeDetailsHash = validationData.responseObject.hashedOnchainId;
+
+    // Generate the currency hash and rate
+    const currencyWithRate = [
+      [
+        {
+          code: currencyKeccak256(currency),
+          conversionRate: ethers.utils.parseUnits('1'),
+        },
+      ],
+    ];
+
+    // Format and convert the amount
+    const amountFormatted = parseUnits(amount, 6);
+    const amountConverted = calculateConvertedAmount(
+      amountFormatted.toString(),
+      conversionRate
+    );
+
+    // Prepare the proof
+    const parsedProof = parseExtensionProof(onrampProof);
+    const encodedProof = encodeProofAsBytes(parsedProof);
+
+    // Prepare verifier data
+    const intentsGating = process.env.NEXT_PUBLIC_INTENTS_GATING_ADDRESS as `0x${string}`;
+    const verifierData = [
+      {
+        intentGatingService: intentsGating,
+        payeeDetails: payeeDetailsHash,
+        data: ethers.utils.defaultAbiCoder.encode(
+          ['address[]'],
+          [['0x0636c417755E3ae25C6c166D181c0607F4C572A3']]
+        ),
+      },
+    ];
+
+    // Get verifier address
+    const verifier = platformToVerifier(destinationPlatform);
+    const offrampIntent = {
+      verifiers: [verifier],
+      data: verifierData,
+      currencies: currencyWithRate,
+    };
 
     console.log(`✅ Parameters prepared:`, {
       amountConverted,

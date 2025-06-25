@@ -7,7 +7,6 @@ import {
 } from '@/lib/contract-client';
 import {
   prepareSignalIntentPayload,
-  getGatingServiceSignature,
   calculateConvertedAmount,
   handleContractError
 } from '@/lib/contract-utils';
@@ -63,9 +62,34 @@ export async function POST(request: NextRequest): Promise<NextResponse<SignalInt
     const payload = prepareSignalIntentPayload(quote, amount, currency);
     console.log(`📦 Signal Intent Payload:`, payload);
 
-    // 4. Get gating service signature
+    // 4. Get gating service signature from ZKP2P API
     console.log(`🔑 Getting gating service signature...`);
-    const gatingServiceSignature = await getGatingServiceSignature(payload);
+    
+    const API_URL_BASE = process.env.ZKP2P_API_URL || 'https://api.zkp2p.xyz/v1';
+    const API_URL = `${API_URL_BASE}/verify/intent`;
+    const ZKP2P_API_KEY = process.env.ZKP2P_API_KEY;
+
+    if (!ZKP2P_API_KEY) {
+      throw new Error('ZKP2P_API_KEY not configured');
+    }
+
+    const gatingResponse = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": ZKP2P_API_KEY
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!gatingResponse.ok) {
+      const errorData = await gatingResponse.json();
+      console.error('Error from ZKP2P Gating API:', errorData);
+      throw new Error('Error getting intent signature from ZKP2P');
+    }
+
+    const gatingData = await gatingResponse.json();
+    const gatingServiceSignature = gatingData.responseObject.intentData.gatingServiceSignature;
     console.log(`✅ Got gating service signature`);
 
     // 5. Prepare contract parameters

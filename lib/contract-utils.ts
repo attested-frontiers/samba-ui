@@ -17,6 +17,7 @@ export const getContractAddresses = () => ({
   chainId: process.env.NEXT_PUBLIC_CHAIN_ID || '31337',
 });
 
+
 /**
  * Calculate converted amount based on conversion rate
  */
@@ -66,112 +67,7 @@ export function prepareSignalIntentPayload(
   };
 }
 
-/**
- * Get gating service signature from API
- */
-export async function getGatingServiceSignature(payload: IntentSignalRequest): Promise<string> {
-  const response = await fetch('/api/intents', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
-  
-  if (!response.ok) {
-    const errorData = await response.json();
-    console.error('Error from Gating Service API:', errorData);
-    throw new Error('Error getting gating service signature');
-  }
-  
-  const data = await response.json();
-  return data.responseObject.intentData.gatingServiceSignature;
-}
 
-/**
- * Prepare fulfill and onramp parameters
- */
-export async function prepareFulfillAndOnrampParams(
-  amount: string,
-  conversionRate: string,
-  onrampProof: Proof,
-  currency: ZKP2PCurrencies,
-  destinationUsername: string,
-  destinationPlatform: PaymentPlatforms
-) {
-  const { intentsGating } = getContractAddresses();
-  
-  // Get the payee details hash
-  const marketMakerMetadataPayload = getMarketMakerMetadataPayload(
-    destinationUsername,
-    destinationPlatform
-  );
-  
-  // Validate market maker with ZKP2P API
-  const response = await fetch('/api/deposits/validate', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(marketMakerMetadataPayload),
-  });
-  
-  if (!response.ok) {
-    const errorData = await response.json();
-    console.error('Error from ZKP2P API:', errorData);
-    throw new Error('Error validating market maker with ZKP2P');
-  }
-  
-  const validationData = await response.json();
-  const payeeDetailsHash = validationData.hashedOnchainId;
-  
-  // Generate the currency hash and rate
-  const currencyWithRate = [
-    [
-      {
-        code: currencyKeccak256(currency),
-        conversionRate: ethers.utils.parseUnits('1'),
-      },
-    ],
-  ];
-  
-  // Format and convert the amount
-  const amountFormatted = parseUnits(amount, 6);
-  const amountConverted = calculateConvertedAmount(
-    amountFormatted.toString(),
-    conversionRate
-  );
-  
-  // Prepare the proof
-  const parsedProof = parseExtensionProof(onrampProof);
-  const encodedProof = encodeProofAsBytes(parsedProof);
-  
-  // Prepare verifier data
-  const verifierData = [
-    {
-      intentGatingService: intentsGating,
-      payeeDetails: payeeDetailsHash,
-      data: ethers.utils.defaultAbiCoder.encode(
-        ['address[]'],
-        [['0x0636c417755E3ae25C6c166D181c0607F4C572A3']]
-      ),
-    },
-  ];
-  
-  // Get verifier address
-  const verifier = platformToVerifier(destinationPlatform);
-  const offrampIntent = {
-    verifiers: [verifier],
-    data: verifierData,
-    currencies: currencyWithRate,
-  };
-  
-  return {
-    amountConverted,
-    encodedProof,
-    offrampIntent,
-  };
-}
 
 /**
  * Parse transaction receipt for event logs

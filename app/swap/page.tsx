@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/select';
 import { ArrowUpDown, LogOut, User } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { signalIntent, fulfillAndOnramp } from '@/lib/contract-api';
 // import { useAccount, useDisconnect } from 'wagmi';
 // import { useContracts } from '@/context/contracts';
 import {
@@ -90,7 +91,7 @@ export default function SwapInterface() {
   const [isPaymentFound, setIsPaymentFound] = useState(false);
   const [isGettingQuote, setIsGettingQuote] = useState(false);
   const [onrampIntentHash, setOnrampIntentHash] = useState<string | null>(
-    '0x2cb6c7cd80b0b09bfc5fc9c68ad0d7d6fcd6926b88226ed7b1b832c7dd4e10af'
+    '0x1e079e8b950290f0b7fa7321de5cba1800643aab1e12856b832a405321a57318'
   );
   const [isCancelingIntent, setIsCancelingIntent] = useState(false);
   const [paymentTriggerError, setPaymentTriggerError] = useState<string>('');
@@ -405,22 +406,42 @@ export default function SwapInterface() {
       return;
     }
     try {
-      // TODO: Replace with backend API call
-      // await samba.fulfillAndOnramp(
-      //   amount,
-      //   depositTarget!.intent.conversionRate,
-      //   onrampIntentHash as `0x${string}`,
-      //   paymentProof.proof,
-      //   toCurrency as ZKP2PCurrencies,
-      //   offrampRecipient,
-      //   toMethod as PaymentPlatforms
-      // );
-      console.log('Fulfill and onramp - to be implemented with backend API');
+      await fulfillAndOnramp(
+        amount,
+        depositTarget!.intent.conversionRate,
+        onrampIntentHash as `0x${string}`,
+        paymentProof.proof,
+        toCurrency as ZKP2PCurrencies,
+        offrampRecipient,
+        toMethod as PaymentPlatforms
+      );
       setExecutionStep(5);
       setExecutionProgress(80);
-    } catch (error) {
+    } catch (error: any) {
       console.error('fulfillAndOnramp failed', error);
-      setSubmissionError('Payment submission failed. Please try again.');
+      
+      // Handle different error types from API
+      let errorMessage = 'Payment submission failed. Please try again.';
+      
+      if (error.message?.includes('Missing or invalid authorization')) {
+        errorMessage = 'Authentication failed. Please sign in again.';
+      } else if (error.message?.includes('Missing required fields')) {
+        errorMessage = 'Invalid transaction data. Please try again.';
+      } else if (error.message?.includes('Contract error')) {
+        errorMessage = 'Blockchain transaction failed. Please try again.';
+      } else if (error.message?.includes('Error validating market maker')) {
+        errorMessage = 'Invalid recipient. Please check the recipient details.';
+      } else if (error.message?.includes('Insufficient funds')) {
+        errorMessage = 'Insufficient funds for transaction.';
+      } else if (error.message?.includes('Network error')) {
+        errorMessage = 'Network error. Please check your connection.';
+      } else if (error.message?.includes('Intent hash not returned')) {
+        errorMessage = 'Invalid intent hash. Please restart the transaction.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setSubmissionError(errorMessage);
       setIsProcessing(false);
     }
   };
@@ -457,19 +478,46 @@ export default function SwapInterface() {
         fromMethod as PaymentPlatforms
       );
       const currency = fromCurrency as ZKP2PCurrencies;
-      // TODO: Replace with backend API call
-      // const intentHash = await samba.signalIntent(
-      //   depositTarget,
-      //   amount,
-      //   verifierAddress,
-      //   currency
-      // );
-      const intentHash = '0x1234567890abcdef'; // Placeholder
+      const intentHash = await signalIntent(
+        depositTarget,
+        amount,
+        verifierAddress,
+        currency
+      );
       setOnrampIntentHash(intentHash);
       handlePaymentTriggerSuccess();
     } catch (error: any) {
       console.error('Payment trigger failed:', error);
-      handlePaymentTriggerError(error.message || 'Unknown error occurred');
+      
+      // Handle different error types from API
+      let errorMessage = 'Unknown error occurred';
+      
+      if (error.message?.includes('Missing or invalid authorization')) {
+        errorMessage = 'Authentication failed. Please sign in again.';
+        setProofStatus('error');
+      } else if (error.message?.includes('Missing required fields')) {
+        errorMessage = 'Invalid transaction data. Please try again.';
+        setProofStatus('error');
+      } else if (error.message?.includes('Contract error')) {
+        errorMessage = 'Blockchain transaction failed. Please try again.';
+        setProofStatus('error');
+      } else if (error.message?.includes('Account has unfulfilled intent')) {
+        errorMessage = 'Payment intent already exists. Please cancel existing intent.';
+        setProofStatus('error_intent');
+      } else if (error.message?.includes('Insufficient funds')) {
+        errorMessage = 'Insufficient funds for transaction.';
+        setProofStatus('error');
+      } else if (error.message?.includes('Network error')) {
+        errorMessage = 'Network error. Please check your connection.';
+        setProofStatus('error');
+      } else if (error.message) {
+        errorMessage = error.message;
+        setProofStatus('error');
+      } else {
+        setProofStatus('error');
+      }
+      
+      handlePaymentTriggerError(errorMessage);
     }
   };
 
