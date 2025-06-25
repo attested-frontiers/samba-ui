@@ -42,8 +42,8 @@ export default function LandingPage() {
       {/* Header */}
       <header className='container mx-auto px-4 py-6'>
         <nav className='flex items-center justify-between'>
-          <div className='flex items-center'>
-            <img src='/samba-logo.png' alt='Samba' className='w-16 h-16' />
+          <div className='flex items-center space-x-1'>
+            <img src='/samba-logo.png' alt='Samba' className='w-12 h-12' />
             <span className='text-xl font-bold text-gray-900'>Samba</span>
           </div>
           <Button

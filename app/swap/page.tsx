@@ -487,7 +487,7 @@ export default function SwapInterface() {
   };
 
   // Helper to get payment method logo as an <img> tag
-  const getPaymentMethodLogo = (methodId: string, size = 24) => {
+  const getPaymentMethodLogo = (methodId: string, size = 23) => {
     if (methodId === 'venmo') {
       return (
         <img
@@ -674,7 +674,7 @@ export default function SwapInterface() {
         {/* Header */}
         <header className='container mx-auto px-4 py-6'>
           <nav className='flex items-center justify-between'>
-            <div className='flex items-center space-x-2'>
+            <div className='flex items-center space-x-0.5'>
               <img src='/samba-logo.png' alt='Samba' className='w-8 h-8' />
               <span className='text-xl font-bold text-gray-900'>Samba</span>
             </div>
@@ -743,7 +743,7 @@ export default function SwapInterface() {
                 <div className='flex items-center justify-between p-4 border rounded-lg'>
                   <div className='flex items-center space-x-3'>
                     <div className='text-2xl'>
-                      {getPaymentMethodLogo(fromMethod, 28)}
+                      {getPaymentMethodLogo(fromMethod, 27)}
                     </div>
                     <div>
                       <div className='font-medium'>
@@ -793,7 +793,7 @@ export default function SwapInterface() {
                         <SelectContent>
                           {paymentMethods.map((method) => (
                             <SelectItem key={method.id} value={method.id}>
-                              {getPaymentMethodLogo(method.id, 20)}{' '}
+                              {getPaymentMethodLogo(method.id, 19)}{' '}
                               {method.name}
                             </SelectItem>
                           ))}
@@ -814,7 +814,7 @@ export default function SwapInterface() {
                 <div className='flex items-center justify-between p-4 border rounded-lg'>
                   <div className='flex items-center space-x-3'>
                     <div className='text-2xl'>
-                      {getPaymentMethodLogo(toMethod, 28)}
+                      {getPaymentMethodLogo(toMethod, 27)}
                     </div>
                     <div>
                       <div className='font-medium'>
@@ -855,7 +855,7 @@ export default function SwapInterface() {
                         </SelectContent>
                       </Select>
                       <div className='w-32 px-3 py-2 bg-gray-100 rounded-md flex items-center text-sm text-gray-600'>
-                        {getPaymentMethodLogo(toMethod, 20)}{' '}
+                        {getPaymentMethodLogo(toMethod, 19)}{' '}
                         {paymentMethods.find((m) => m.id === toMethod)?.name}
                       </div>
                     </div>
