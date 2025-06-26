@@ -9,7 +9,7 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'Samba - Cross-Border Currency Exchange',
   description:
-    'Seamless cross-border currency swaps powered by blockchain technology',
+    'Seamless cross-border payments between different payment providers with minimal fees',
   generator: 'v0.dev',
   icons: {
     icon: '/favicon.ico',

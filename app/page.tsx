@@ -63,7 +63,9 @@ export default function LandingPage() {
               <div className='h-4 w-4 bg-red-600 rounded-full flex items-center justify-center text-white text-xs'>
                 !
               </div>
-              <span className='text-red-800 font-medium text-sm'>Sign In Error</span>
+              <span className='text-red-800 font-medium text-sm'>
+                Sign In Error
+              </span>
             </div>
             <p className='text-red-700 text-sm mt-1'>{error}</p>
             <button
@@ -83,13 +85,12 @@ export default function LandingPage() {
             Seamless Cross-Border
             <span className='bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent'>
               {' '}
-              Currency Swaps
+              Payments
             </span>
           </h1>
           <p className='text-xl text-gray-600 mb-8 max-w-2xl mx-auto'>
-            Exchange currencies instantly with the power of blockchain
-            technology. Fast, secure, and transparent transactions across the
-            globe.
+            Exchange money instantly between different payment providers. Fast,
+            secure, and transparent cross-border transactions with minimal fees.
           </p>
           <div className='flex flex-col sm:flex-row gap-4 justify-center'>
             <Button
@@ -98,7 +99,9 @@ export default function LandingPage() {
               size='lg'
               className='bg-gradient-to-r from-primary to-secondary hover:from-primary/80 hover:to-secondary/80 text-lg px-8 py-3'
             >
-              {loading ? 'Signing in...' : (
+              {loading ? (
+                'Signing in...'
+              ) : (
                 <>
                   Get Started <ArrowRight className='ml-2 h-5 w-5' />
                 </>
@@ -118,8 +121,7 @@ export default function LandingPage() {
             Why Choose Samba?
           </h2>
           <p className='text-lg text-gray-600 max-w-2xl mx-auto'>
-            Built for the modern world, powered by cutting-edge blockchain
-            technology
+            Built for the modern world, connecting payment providers seamlessly
           </p>
         </div>
 
@@ -129,12 +131,11 @@ export default function LandingPage() {
               <div className='w-12 h-12 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-lg flex items-center justify-center mx-auto mb-4'>
                 <Shield className='h-6 w-6 text-primary' />
               </div>
-              <CardTitle className='text-xl'>Secure</CardTitle>
+              <CardTitle className='text-xl'>Secure & Trusted</CardTitle>
             </CardHeader>
             <CardContent>
               <CardDescription className='text-base'>
-                Bank-level security with blockchain transparency and smart
-                contract protection
+                Your cash and data are protected with advanced security measures
               </CardDescription>
             </CardContent>
           </Card>
@@ -148,8 +149,7 @@ export default function LandingPage() {
             </CardHeader>
             <CardContent>
               <CardDescription className='text-base'>
-                Complete transactions in seconds, not days. Real-time processing
-                and instant confirmations
+                Send money across borders in seconds
               </CardDescription>
             </CardContent>
           </Card>
@@ -163,8 +163,8 @@ export default function LandingPage() {
             </CardHeader>
             <CardContent>
               <CardDescription className='text-base'>
-                Support for 50+ currencies and payment methods across 100+
-                countries worldwide
+                Connect dozens of payment providers from different countries
+                easily
               </CardDescription>
             </CardContent>
           </Card>
@@ -174,12 +174,11 @@ export default function LandingPage() {
               <div className='w-12 h-12 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-lg flex items-center justify-center mx-auto mb-4'>
                 <TrendingUp className='h-6 w-6 text-primary' />
               </div>
-              <CardTitle className='text-xl'>Best Rates</CardTitle>
+              <CardTitle className='text-xl'>Minimal Fees</CardTitle>
             </CardHeader>
             <CardContent>
               <CardDescription className='text-base'>
-                Competitive exchange rates with transparent fees. No hidden
-                charges or surprises
+                Low, transparent fees with no hidden costs
               </CardDescription>
             </CardContent>
           </Card>
@@ -204,7 +203,9 @@ export default function LandingPage() {
               variant='secondary'
               className='text-lg px-8 py-3 bg-white text-primary hover:bg-gray-100'
             >
-              {loading ? 'Signing in...' : (
+              {loading ? (
+                'Signing in...'
+              ) : (
                 <>
                   Sign in with Google <ArrowRight className='ml-2 h-5 w-5' />
                 </>
