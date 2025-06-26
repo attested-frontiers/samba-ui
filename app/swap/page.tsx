@@ -19,8 +19,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ArrowUpDown, LogOut, User } from 'lucide-react';
-import { useAccount, useDisconnect } from 'wagmi';
-import { useContracts } from '@/context/contracts';
+import { useAuth } from '@/context/AuthContext';
+import { signalIntent, fulfillAndOnramp } from '@/lib/contract-api';
+// import { useAccount, useDisconnect } from 'wagmi';
+// import { useContracts } from '@/context/contracts';
 import {
   Dialog,
   DialogContent,
@@ -61,10 +63,14 @@ const paymentMethods = [
 ];
 
 export default function SwapInterface() {
-  const { address } = useAccount();
-  const { samba } = useContracts();
-
-  const { disconnect } = useDisconnect();
+  const { user, loading, signOut } = useAuth();
+  // const { address } = useAccount();
+  // const { samba } = useContracts();
+  // const { disconnect } = useDisconnect();
+  
+  // Temporary placeholder values for web3 functionality
+  const address = '0x1234...5678'; // Placeholder
+  const samba = null; // Will be replaced with backend API calls
   const [currentStep, setCurrentStep] = useState(1);
   const [proofIndex, setProofIndex] = useState<number | null>(null);
   const [fromCurrency, setFromCurrency] = useState('USD');
@@ -85,7 +91,7 @@ export default function SwapInterface() {
   const [isPaymentFound, setIsPaymentFound] = useState(false);
   const [isGettingQuote, setIsGettingQuote] = useState(false);
   const [onrampIntentHash, setOnrampIntentHash] = useState<string | null>(
-    '0x2cb6c7cd80b0b09bfc5fc9c68ad0d7d6fcd6926b88226ed7b1b832c7dd4e10af'
+    '0x1e079e8b950290f0b7fa7321de5cba1800643aab1e12856b832a405321a57318'
   );
   const [isCancelingIntent, setIsCancelingIntent] = useState(false);
   const [paymentTriggerError, setPaymentTriggerError] = useState<string>('');
@@ -291,7 +297,7 @@ export default function SwapInterface() {
       paymentPlatform: fromMethod as PaymentPlatforms,
       amount: parseUnits(amount, 6).toString(),
       fiatCurrency: fromCurrency as ZKP2PCurrencies,
-      user: address as `0x${string}`,
+      user: '0x1234567890123456789012345678901234567890' as `0x${string}`, // Placeholder address
     };
     let data: QuoteResponse;
     try {
@@ -372,9 +378,11 @@ export default function SwapInterface() {
   const cancelIntent = async () => {
     setIsCancelingIntent(true);
     try {
-      await samba.cancelIntent(
-        '0x27a0a07aaa46344ef6d9f13f9b2f1140840f21b6e017fd04ec6828b467a6ade9' as `0x${string}`
-      );
+      // TODO: Replace with backend API call
+      // await samba.cancelIntent(
+      //   '0x27a0a07aaa46344ef6d9f13f9b2f1140840f21b6e017fd04ec6828b467a6ade9' as `0x${string}`
+      // );
+      console.log('Cancel intent - to be implemented with backend API');
       setProofStatus('idle');
       setPaymentTriggerError('');
     } catch (error) {
@@ -398,7 +406,7 @@ export default function SwapInterface() {
       return;
     }
     try {
-      await samba.fulfillAndOnramp(
+      await fulfillAndOnramp(
         amount,
         depositTarget!.intent.conversionRate,
         onrampIntentHash as `0x${string}`,
@@ -409,9 +417,31 @@ export default function SwapInterface() {
       );
       setExecutionStep(5);
       setExecutionProgress(80);
-    } catch (error) {
+    } catch (error: any) {
       console.error('fulfillAndOnramp failed', error);
-      setSubmissionError('Payment submission failed. Please try again.');
+      
+      // Handle different error types from API
+      let errorMessage = 'Payment submission failed. Please try again.';
+      
+      if (error.message?.includes('Missing or invalid authorization')) {
+        errorMessage = 'Authentication failed. Please sign in again.';
+      } else if (error.message?.includes('Missing required fields')) {
+        errorMessage = 'Invalid transaction data. Please try again.';
+      } else if (error.message?.includes('Contract error')) {
+        errorMessage = 'Blockchain transaction failed. Please try again.';
+      } else if (error.message?.includes('Error validating market maker')) {
+        errorMessage = 'Invalid recipient. Please check the recipient details.';
+      } else if (error.message?.includes('Insufficient funds')) {
+        errorMessage = 'Insufficient funds for transaction.';
+      } else if (error.message?.includes('Network error')) {
+        errorMessage = 'Network error. Please check your connection.';
+      } else if (error.message?.includes('Intent hash not returned')) {
+        errorMessage = 'Invalid intent hash. Please restart the transaction.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setSubmissionError(errorMessage);
       setIsProcessing(false);
     }
   };
@@ -425,6 +455,7 @@ export default function SwapInterface() {
     setProofStatus('idle');
     setProofIndex(null);
   };
+
 
   // todo: this actually should open payment link byt being coopted
   // to signal intent
@@ -447,7 +478,7 @@ export default function SwapInterface() {
         fromMethod as PaymentPlatforms
       );
       const currency = fromCurrency as ZKP2PCurrencies;
-      const intentHash = await samba.signalIntent(
+      const intentHash = await signalIntent(
         depositTarget,
         amount,
         verifierAddress,
@@ -457,7 +488,36 @@ export default function SwapInterface() {
       handlePaymentTriggerSuccess();
     } catch (error: any) {
       console.error('Payment trigger failed:', error);
-      handlePaymentTriggerError(error.message || 'Unknown error occurred');
+      
+      // Handle different error types from API
+      let errorMessage = 'Unknown error occurred';
+      
+      if (error.message?.includes('Missing or invalid authorization')) {
+        errorMessage = 'Authentication failed. Please sign in again.';
+        setProofStatus('error');
+      } else if (error.message?.includes('Missing required fields')) {
+        errorMessage = 'Invalid transaction data. Please try again.';
+        setProofStatus('error');
+      } else if (error.message?.includes('Contract error')) {
+        errorMessage = 'Blockchain transaction failed. Please try again.';
+        setProofStatus('error');
+      } else if (error.message?.includes('Account has unfulfilled intent')) {
+        errorMessage = 'Payment intent already exists. Please cancel existing intent.';
+        setProofStatus('error_intent');
+      } else if (error.message?.includes('Insufficient funds')) {
+        errorMessage = 'Insufficient funds for transaction.';
+        setProofStatus('error');
+      } else if (error.message?.includes('Network error')) {
+        errorMessage = 'Network error. Please check your connection.';
+        setProofStatus('error');
+      } else if (error.message) {
+        errorMessage = error.message;
+        setProofStatus('error');
+      } else {
+        setProofStatus('error');
+      }
+      
+      handlePaymentTriggerError(errorMessage);
     }
   };
 
@@ -681,13 +741,16 @@ export default function SwapInterface() {
             <div className='flex items-center space-x-4'>
               <div className='flex items-center space-x-2 text-sm text-gray-600'>
                 <User className='h-4 w-4' />
-                <span>
-                  {address?.slice(0, 6)}...{address?.slice(-4)}
-                </span>
+                <span>{user?.email || 'user@example.com'}</span>
               </div>
-              <Button variant='outline' size='sm' onClick={() => disconnect()}>
+              <Button 
+                variant='outline' 
+                size='sm' 
+                onClick={() => signOut()}
+                disabled={loading}
+              >
                 <LogOut className='h-4 w-4 mr-2' />
-                Disconnect
+                {loading ? 'Signing out...' : 'Sign Out'}
               </Button>
             </div>
           </nav>
