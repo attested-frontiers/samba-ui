@@ -3,6 +3,7 @@ import { authenticateRequest, AuthenticationError, createAuthErrorResponse } fro
 import WrapperArtifact from '@/lib/artifacts/Wrapper.json';
 import { MongoClient } from 'mongodb';
 import { createBackendClients } from '@/lib/contract-client';
+import { getWrapperContractByEmail } from "@/lib/contract-utils";
 
 const MONGODB_URI = process.env.MONGODB_URI || '';
 const DB_NAME = process.env.DB_NAME || 'samba';
@@ -15,20 +16,14 @@ export async function GET(request: NextRequest) {
         const user = await authenticateRequest(request);
         console.log(`🔐 Authenticated user: ${user.email}`);
 
-        // Connect to MongoDB
-        const client = new MongoClient(MONGODB_URI);
-
         try {
-            await client.connect();
-            const db = client.db(DB_NAME);
-            const collection = db.collection(COLLECTION_NAME);
 
             // Find user by email
-            const userContract = await collection.findOne({ email: user.email });
+            const wrapperContract = await getWrapperContractByEmail(user.email || '');
 
-            if (userContract && userContract.wrapperContract) {
+            if (wrapperContract) {
                 return NextResponse.json({
-                    wrapperContract: userContract.wrapperContract
+                    wrapperContract
                 });
             } else {
                 return NextResponse.json({
