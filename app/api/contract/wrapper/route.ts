@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
             // Deploy the contract using viem
             const hash = await walletClient.deployContract({
                 abi: WrapperArtifact.abi,
-                bytecode: `0x${WrapperArtifact.bytecode}`,
+                bytecode: `${WrapperArtifact.bytecode}` as `0x${string}`,
                 args: [NEXT_PUBLIC_ZKP2P_CONTRACT, NEXT_PUBLIC_USDC_CONTRACT, NEXT_PUBLIC_ADMIN_PUBKEY],
             });
 
