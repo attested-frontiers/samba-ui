@@ -8,6 +8,8 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   error: string | null;
+  isCheckingContract: boolean;
+  isDeployingContract: boolean;
   signIn: () => Promise<User | null>;
   signOut: () => Promise<void>;
   clearError: () => void;
@@ -31,6 +33,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isCheckingContract, setIsCheckingContract] = useState(false);
+  const [isDeployingContract, setIsDeployingContract] = useState(false);
 
   const checkUserContract = async (user: User): Promise<string | null> => {
     try {
@@ -59,6 +63,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const createWrapperContract = async (user: User): Promise<string | null> => {
     try {
+      setIsDeployingContract(true);
       const token = await user.getIdToken();
       const response = await fetch('/api/contract/wrapper', {
         method: 'POST',
@@ -70,7 +75,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Wrapper contract created:', data.wrapperContract);
+        console.log('Wrapper contract created:', data);
         return data.wrapperContract;
       } else {
         const errorData = await response.json();
@@ -80,6 +85,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch (error) {
       console.error('Error creating wrapper contract:', error);
       return null;
+    } finally {
+      setIsDeployingContract(false);
     }
   };
 
@@ -99,8 +106,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const user = await signInWithGoogle();
       // Check if user has a contract address
       if (user) {
+        setIsCheckingContract(true);
         const wrapperContract = await checkUserContract(user);
         console.log('Wrapper contract:', wrapperContract);
+        setIsCheckingContract(false);
         if (!wrapperContract) {
           await createWrapperContract(user);
         }
@@ -152,6 +161,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     user,
     loading,
     error,
+    isCheckingContract,
+    isDeployingContract,
     signIn,
     signOut,
     clearError,

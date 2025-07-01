@@ -15,7 +15,15 @@ import { useAuth } from '@/context/AuthContext';
 import SwapInterface from './swap/page';
 
 export default function LandingPage() {
-  const { user, loading, error, signIn, clearError } = useAuth();
+  const {
+    user,
+    loading,
+    error,
+    signIn,
+    clearError,
+    isCheckingContract,
+    isDeployingContract,
+  } = useAuth();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -26,8 +34,8 @@ export default function LandingPage() {
     return null;
   }
 
-  // If user is authenticated, show swap interface
-  if (user) {
+  // If user is authenticated and not checking/deploying contract, show swap interface
+  if (user && !isCheckingContract && !isDeployingContract) {
     return <SwapInterface />;
   }
 
@@ -35,6 +43,8 @@ export default function LandingPage() {
     clearError(); // Clear any previous errors
     await signIn();
   };
+
+  console.log('isDeployingContract', isDeployingContract);
 
   return (
     <div className='min-h-screen bg-gradient-to-br from-primary/5 via-white to-secondary/5'>
@@ -47,10 +57,16 @@ export default function LandingPage() {
           </div>
           <Button
             onClick={handleSignIn}
-            disabled={loading}
+            disabled={loading || isCheckingContract || isDeployingContract}
             className='bg-gradient-to-r from-primary to-secondary hover:from-primary/80 hover:to-secondary/80'
           >
-            {loading ? 'Signing in...' : 'Sign In'}
+            {isDeployingContract
+              ? 'Deploying contract...'
+              : isCheckingContract
+              ? 'Checking for wrapper contract...'
+              : loading
+              ? 'Signing in...'
+              : 'Sign In'}
           </Button>
         </nav>
       </header>
@@ -95,11 +111,15 @@ export default function LandingPage() {
           <div className='flex flex-col sm:flex-row gap-4 justify-center'>
             <Button
               onClick={handleSignIn}
-              disabled={loading}
+              disabled={loading || isCheckingContract || isDeployingContract}
               size='lg'
               className='bg-gradient-to-r from-primary to-secondary hover:from-primary/80 hover:to-secondary/80 text-lg px-8 py-3'
             >
-              {loading ? (
+              {isDeployingContract ? (
+                'Deploying contract...'
+              ) : isCheckingContract ? (
+                'Checking contract...'
+              ) : loading ? (
                 'Signing in...'
               ) : (
                 <>
@@ -198,12 +218,16 @@ export default function LandingPage() {
             </p>
             <Button
               onClick={handleSignIn}
-              disabled={loading}
+              disabled={loading || isCheckingContract || isDeployingContract}
               size='lg'
               variant='secondary'
               className='text-lg px-8 py-3 bg-white text-primary hover:bg-gray-100'
             >
-              {loading ? (
+              {isDeployingContract ? (
+                'Deploying contract...'
+              ) : isCheckingContract ? (
+                'Checking contract...'
+              ) : loading ? (
                 'Signing in...'
               ) : (
                 <>

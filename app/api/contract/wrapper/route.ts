@@ -75,10 +75,6 @@ export async function POST(request: NextRequest) {
             // Create contract factory
             const { publicClient, walletClient } = createBackendClients();
 
-            console.log('Next Public ZKP2P Contract', NEXT_PUBLIC_ZKP2P_CONTRACT);
-            console.log('Next Public USDC Contract', NEXT_PUBLIC_USDC_CONTRACT);
-            console.log('Next Public Admin Pubkey', NEXT_PUBLIC_ADMIN_PUBKEY);
-
             // Deploy the contract using viem
             const hash = await walletClient.deployContract({
                 abi: WrapperArtifact.abi,
