@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { MarketMakerMetadata, PayeeDetailsResponse, Quote, QuoteRequest } from '@/lib/types/intents';
+import { PayeeDetailsResponse, Quote, QuoteRequest } from '@/lib/types/intents';
 import { getWrapperContractByEmail } from "@/lib/contract-utils";
 import { authenticateRequest, createAuthErrorResponse, AuthenticationError } from "@/lib/auth-middleware";
 
