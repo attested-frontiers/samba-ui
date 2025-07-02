@@ -64,13 +64,8 @@ const paymentMethods = [
 
 export default function SwapInterface() {
   const { user, loading, signOut } = useAuth();
-  // const { address } = useAccount();
-  // const { samba } = useContracts();
-  // const { disconnect } = useDisconnect();
   
   // Temporary placeholder values for web3 functionality
-  const address = '0x1234...5678'; // Placeholder
-  const samba = null; // Will be replaced with backend API calls
   const [currentStep, setCurrentStep] = useState(1);
   const [proofIndex, setProofIndex] = useState<number | null>(null);
   const [fromCurrency, setFromCurrency] = useState('USD');
@@ -96,6 +91,7 @@ export default function SwapInterface() {
   const [isCancelingIntent, setIsCancelingIntent] = useState(false);
   const [paymentTriggerError, setPaymentTriggerError] = useState<string>('');
   const [submissionError, setSubmissionError] = useState<string>('');
+  const [showConnectionModal, setShowConnectionModal] = useState(false);
 
   // Proof management state
   const [proofStatus, setProofStatus] = useState<
@@ -111,6 +107,8 @@ export default function SwapInterface() {
     sideBarVersion,
     refetchExtensionVersion,
     openNewTab,
+    isConnectionApproved,
+    requestConnection,
     openSidebar,
     platformMetadata,
     paymentProof,
@@ -206,6 +204,7 @@ export default function SwapInterface() {
   const handleFromMethodChange = (newMethod: string) => {
     setFromMethod(newMethod);
     setToMethod(getOtherPaymentMethod(newMethod));
+    requestConnection(); // HERE
 
     // Update currencies to valid ones for the new methods
     const newFromCurrencies = getAvailableCurrencies(newMethod);
@@ -717,6 +716,20 @@ export default function SwapInterface() {
       }
     }
   }, [proofStatus, intervalId]);
+
+  // Handle connection approval state changes
+  useEffect(() => {
+    console.log('Connection approval state changed:', isConnectionApproved);
+    if (isConnectionApproved === null) {
+      // First attempt to connect
+      requestConnection();
+    } else if (isConnectionApproved === false) {
+      // Connection denied, show modal
+      setShowConnectionModal(true);
+    } else if (isConnectionApproved === true) {
+      setShowConnectionModal(false);
+    }
+  }, [isConnectionApproved, requestConnection]);
 
   const renderPaymentStatus = () => {
     return isPaymentFound ? 'Found payment' : 'Not found payment';
@@ -1418,6 +1431,35 @@ export default function SwapInterface() {
                       </div>
                     );
                   })}
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Connection Modal */}
+          <Dialog open={showConnectionModal} onOpenChange={setShowConnectionModal}>
+            <DialogContent className='sm:max-w-md'>
+              <DialogHeader>
+                <DialogTitle className='text-center text-red-600'>
+                  PeerAuth Connection Denied
+                </DialogTitle>
+              </DialogHeader>
+              <div className='space-y-4'>
+                <div className='text-center py-4'>
+                  <div className='w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4'>
+                    <div className='w-8 h-8 bg-red-600 rounded-full flex items-center justify-center text-white text-lg font-bold'>
+                      !
+                    </div>
+                  </div>
+                  <p className='text-gray-600 mb-4'>
+                    PeerAuth connection denied, please connect
+                  </p>
+                  <Button
+                    onClick={requestConnection}
+                    className='w-full bg-red-600 hover:bg-red-700 text-white'
+                  >
+                    Connect PeerAuth
+                  </Button>
                 </div>
               </div>
             </DialogContent>
