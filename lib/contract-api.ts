@@ -38,6 +38,7 @@ interface FulfillAndOnrampRequest {
 interface FulfillAndOnrampResponse {
   success: boolean;
   txHash?: string;
+  depositId?: string;
   message?: string;
   error?: string;
 }
@@ -89,7 +90,7 @@ export async function fulfillAndOnramp(
   currency: ZKP2PCurrencies,
   destinationUsername: string,
   destinationPlatform: PaymentPlatforms
-): Promise<void> {
+): Promise<string> {
   const requestBody: FulfillAndOnrampRequest = {
     amount,
     conversionRate,
@@ -110,6 +111,7 @@ export async function fulfillAndOnramp(
   if (!response.ok || !data.success) {
     throw new Error(data.error || 'Failed to fulfill and onramp');
   }
+  return data.depositId ? data.depositId : "";
 }
 
 /**

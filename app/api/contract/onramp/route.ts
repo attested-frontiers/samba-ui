@@ -185,14 +185,21 @@ export async function POST(request: NextRequest): Promise<NextResponse<FulfillAn
 
     // 6. Wait for transaction confirmation
     console.log(`⏳ Waiting for transaction confirmation...`);
-    const { receipt } = await waitForTransactionReceipt(txHash);
+    const { receipt, eventLogs } = await waitForTransactionReceipt(txHash, "DepositReceived");
+    if (!eventLogs || eventLogs.length === 0) {
+      throw new Error('IntentSignaled event not found in transaction receipt');
+    }
 
+    const depositId = eventLogs[0].topics[1] as string;
+    console.log(`🎯 Intent signaled successfully! Intent hash: ${intentHash}`);
+    console.log(`💰 Deposit ID: ${depositId}`);
     console.log(`🎉 Fulfill and offramp completed successfully!`);
     console.log(`📋 Transaction confirmed in block: ${receipt.blockNumber}`);
 
     return NextResponse.json({
       success: true,
       txHash,
+      depositId,
       message: 'Onramp confirmed, offramp queued',
     });
 
