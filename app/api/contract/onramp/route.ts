@@ -185,14 +185,28 @@ export async function POST(request: NextRequest): Promise<NextResponse<FulfillAn
 
     // 6. Wait for transaction confirmation
     console.log(`⏳ Waiting for transaction confirmation...`);
-    const { receipt } = await waitForTransactionReceipt(txHash);
-
+    const { receipt, eventLogs } = await waitForTransactionReceipt(txHash, "DepositReceived");
+    let depositId = "0";
+    try {
+      const depositReceivedTopic = "0x68a835da25522a6767ad280764ce2daed02507359a889e4a18219458d2f356b4";
+      let log = receipt.logs.filter((log: any) => log.topics[0] === depositReceivedTopic);
+      if (!log) {
+        throw new Error('DepositReceived event not found in transaction receipt');
+      }
+      depositId = parseInt(log[0].topics[1], 16).toString();
+    } catch (error) {
+      console.error("❌ Error processing event logs:", error);
+    }
+    
+    console.log(`🎯 Intent signaled successfully! Intent hash: ${intentHash}`);
+    console.log(`💰 Deposit ID: ${depositId}`);
     console.log(`🎉 Fulfill and offramp completed successfully!`);
     console.log(`📋 Transaction confirmed in block: ${receipt.blockNumber}`);
 
     return NextResponse.json({
       success: true,
       txHash,
+      depositId,
       message: 'Onramp confirmed, offramp queued',
     });
 

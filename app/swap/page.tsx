@@ -60,7 +60,8 @@ const paymentMethods = [
     id: 'revolut',
     name: 'Revolut',
     logo: '🔵',
-    availableCurrencies: ['USD', 'EUR', 'GBP'],
+    // availableCurrencies: ['USD', 'EUR', 'GBP'],
+    availableCurrencies: ['USD'], // Temporarily limiting to USD
   },
 ];
 
@@ -99,6 +100,8 @@ export default function SwapInterface() {
   const [showConnectionModal, setShowConnectionModal] = useState(false);
   const [showVersionModal, setShowVersionModal] = useState(false);
   const [showInstallModal, setShowInstallModal] = useState(false);
+  const [depositId, setDepositId] = useState<string | null>(null);
+  const [userWrapperContract, setUserWrapperContract] = useState<string | null>(null);
 
   // Proof management state
   const [proofStatus, setProofStatus] = useState<
@@ -161,6 +164,34 @@ export default function SwapInterface() {
       if (permission === 'granted') {
         new Notification(title, options);
       }
+    }
+  };
+
+  // Contract management utility
+  const ensureWrapperContract = async (): Promise<string | null> => {
+    if (!user) return null;
+    
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch('/api/contract/wrapper', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.wrapperContract;
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to ensure wrapper contract:', errorData);
+        return null;
+      }
+    } catch (error) {
+      console.error('Error ensuring wrapper contract:', error);
+      return null;
     }
   };
 
@@ -252,6 +283,21 @@ export default function SwapInterface() {
     }
   };
 
+  const handleSwapSections = () => {
+    // Swap currencies
+    const tempCurrency = fromCurrency;
+    setFromCurrency(toCurrency);
+    setToCurrency(tempCurrency);
+
+    // Swap payment methods
+    const tempMethod = fromMethod;
+    setFromMethod(toMethod);
+    setToMethod(tempMethod);
+
+    // Request connection for the new fromMethod
+    requestConnection();
+  };
+
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAmount(e.target.value);
   };
@@ -297,35 +343,59 @@ export default function SwapInterface() {
 
   const handleReviewTransaction = async () => {
     setIsGettingQuote(true);
-    const request: QuoteRequest = {
-      paymentPlatform: fromMethod as PaymentPlatforms,
-      amount: parseUnits(amount, 6).toString(),
-      fiatCurrency: fromCurrency as ZKP2PCurrencies,
-      user: '0x1234567890123456789012345678901234567890' as `0x${string}`, // Placeholder address
-    };
-    let data: QuoteResponse;
-    const token = await user?.getIdToken();
-    try {
-      const response = await fetch('/api/deposits/quote', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(request),
-      });
+    
+    // Ensure we have both the quote and the contract
+    const [quoteData, contractAddress] = await Promise.all([
+      // Get quote
+      (async () => {
+        const request: QuoteRequest = {
+          paymentPlatform: fromMethod as PaymentPlatforms,
+          amount: parseUnits(amount, 6).toString(),
+          fiatCurrency: fromCurrency as ZKP2PCurrencies,
+          user: '0x1234567890123456789012345678901234567890' as `0x${string}`, // Placeholder address
+        };
+        const token = await user?.getIdToken();
+        const response = await fetch('/api/deposits/quote', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(request),
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Error preparing swap:', errorData);
-        throw new Error(errorData.error || 'Failed to prepare swap');
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Error preparing swap:', errorData);
+          throw new Error(errorData.error || 'Failed to prepare swap');
+        }
+        return (await response.json()) as QuoteResponse;
+      })(),
+      // Ensure contract exists
+      (async () => {
+        if (userWrapperContract) {
+          return userWrapperContract;
+        }
+        // If contract is still null, try to get it
+        const contract = await ensureWrapperContract();
+        if (contract) {
+          setUserWrapperContract(contract);
+          console.log('✅ User wrapper contract set during quote:', contract);
+        }
+        return contract;
+      })()
+    ]);
+
+    try {
+      if (!contractAddress) {
+        throw new Error('Failed to ensure wrapper contract exists');
       }
-      data = (await response.json()) as QuoteResponse;
-      setDepositTarget(data);
+
+      setDepositTarget(quoteData);
       if (fromMethod === 'venmo') {
-        setOnrampRecipient(data.details.depositData.venmoUsername!);
+        setOnrampRecipient(quoteData.details.depositData.venmoUsername!);
       } else if (fromMethod === 'revolut') {
-        setOnrampRecipient(data.details.depositData.revolutUsername!);
+        setOnrampRecipient(quoteData.details.depositData.revolutUsername!);
       }
     } catch (error) {
       console.error('Error preparing swap:', error);
@@ -411,7 +481,7 @@ export default function SwapInterface() {
       return;
     }
     try {
-      await fulfillAndOnramp(
+      const returnedDepositId = await fulfillAndOnramp(
         amount,
         depositTarget!.intent.conversionRate,
         onrampIntentHash as `0x${string}`,
@@ -420,6 +490,7 @@ export default function SwapInterface() {
         offrampRecipient,
         toMethod as PaymentPlatforms
       );
+      setDepositId(returnedDepositId);
       setExecutionStep(5);
       setExecutionProgress(80);
     } catch (error: any) {
@@ -578,6 +649,22 @@ export default function SwapInterface() {
     return null;
   };
 
+  // Auto-check contract when user is available and contract is null
+  useEffect(() => {
+    const checkContract = async () => {
+      if (user && userWrapperContract === null) {
+        console.log('🔍 Checking wrapper contract for user...');
+        const contract = await ensureWrapperContract();
+        if (contract) {
+          setUserWrapperContract(contract);
+          console.log('✅ User wrapper contract set:', contract);
+        }
+      }
+    };
+
+    checkContract();
+  }, [user, userWrapperContract]);
+
   useEffect(() => {
     const checkPaymentMatch = (): boolean => {
       const metadataArray = platformMetadata[fromMethod]?.metadata || [];
@@ -654,11 +741,6 @@ export default function SwapInterface() {
       console.log('✅ Payment proof generated successfully!', paymentProof);
       setProofStatus('success');
       setTriggerProofFetchPolling(false);
-      // Show success notification
-      showBrowserNotification('Payment Proof Generated Successfully! 🎉', {
-        body: 'Your payment proof has been generated and verified. You can now proceed with your transaction.',
-        icon: '/samba-logo.png',
-      });
 
       // Auto-proceed to next step after 1.5 seconds
       setTimeout(() => {
@@ -670,10 +752,6 @@ export default function SwapInterface() {
       setProofStatus('error');
       setTriggerProofFetchPolling(false);
       // Show error notification
-      showBrowserNotification('Payment Proof Generation Failed ❌', {
-        body: 'There was an error generating your payment proof. Please try again.',
-        icon: '/samba-logo.png',
-      });
     } else {
       console.log('⏳ Payment proof still generating...', paymentProof);
       // keep status "generating"
@@ -914,9 +992,13 @@ export default function SwapInterface() {
 
                 {/* Swap Arrow */}
                 <div className='flex justify-center'>
-                  <div className='w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center'>
+                  <button
+                    onClick={handleSwapSections}
+                    disabled={currentStep !== 1}
+                    className='w-10 h-10 bg-gray-100 hover:bg-gray-200 disabled:hover:bg-gray-100 rounded-full flex items-center justify-center transition-colors cursor-pointer disabled:cursor-not-allowed'
+                  >
                     <ArrowUpDown className='h-5 w-5 text-gray-600' />
-                  </div>
+                  </button>
                 </div>
 
                 {/* To Section */}
@@ -1160,7 +1242,7 @@ export default function SwapInterface() {
                             </Tooltip>
                           </div>
 
-                          {/* Skip Trigger Button */}
+                          {/* Skip Trigger Button
                           <div className='flex justify-end'>
                             <Button
                               onClick={() => {
@@ -1173,7 +1255,7 @@ export default function SwapInterface() {
                             >
                               Skip Trigger
                             </Button>
-                          </div>
+                          </div> */}
 
                           {/* Error Message */}
                           {proofStatus.includes('error') && (
@@ -1414,12 +1496,22 @@ export default function SwapInterface() {
                           </strong>{' '}
                           account.
                         </p>
-                        <Button
-                          onClick={handleCloseModal}
-                          className='w-full bg-green-600 hover:bg-green-700'
-                        >
-                          Close
-                        </Button>
+                        <div className='space-y-2'>
+                          {depositId && (
+                            <Button
+                              onClick={() => window.open(`https://zkp2p.xyz/deposit/${depositId}`, '_blank')}
+                              className='w-full bg-blue-600 hover:bg-blue-700 text-white'
+                            >
+                              View Deposit on ZKP2P
+                            </Button>
+                          )}
+                          <Button
+                            onClick={handleCloseModal}
+                            className='w-full bg-green-600 hover:bg-green-700'
+                          >
+                            Close
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   )}
