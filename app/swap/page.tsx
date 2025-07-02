@@ -102,6 +102,9 @@ export default function SwapInterface() {
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [depositId, setDepositId] = useState<string | null>(null);
   const [userWrapperContract, setUserWrapperContract] = useState<string | null>(null);
+  const [continuedIntent, setContinuedIntent] = useState<boolean>(false);
+  const [showContinuingBanner, setShowContinuingBanner] = useState<boolean>(false);
+  const [isCancelingExistingIntent, setIsCancelingExistingIntent] = useState<boolean>(false);
 
   // Proof management state
   const [proofStatus, setProofStatus] = useState<
@@ -192,6 +195,87 @@ export default function SwapInterface() {
     } catch (error) {
       console.error('Error ensuring wrapper contract:', error);
       return null;
+    }
+  };
+
+  // Check for existing intent
+  const checkExistingIntent = async (): Promise<any | null> => {
+    if (!user) return null;
+
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch('/api/contract/signal', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ Found existing intent:', data.intent);
+        return data.intent;
+      } else if (response.status === 404) {
+        console.log('ℹ️ No existing intent found for user');
+        return null;
+      } else {
+        console.error('Error checking existing intent');
+        return null;
+      }
+    } catch (error) {
+      console.error('Error checking existing intent:', error);
+      return null;
+    }
+  };
+
+  // Cancel existing intent handler
+  const handleCancelExistingIntent = async () => {
+    if (!user) return;
+
+    setIsCancelingExistingIntent(true);
+    setErrors({}); // Clear any existing errors
+
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch('/api/intents/cancel', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        // Success: show toast and exit modal
+        console.log('✅ Intent canceled successfully');
+        
+        // Show success notification
+        showBrowserNotification('Transfer Canceled', {
+          body: 'Your existing transfer has been canceled successfully.',
+          icon: '/samba-logo.png',
+        });
+
+        // Clear continuation state and exit modal
+        setContinuedIntent(false);
+        setShowContinuingBanner(false);
+        setShowExecutionModal(false);
+        setExecutionStep(1);
+        setExecutionProgress(0);
+        setCurrentStep(1);
+        setOnrampIntentHash(null);
+
+        console.log('📋 Modal closed and state cleared after intent cancellation');
+      } else {
+        // Error: show error message
+        const errorData = await response.json();
+        console.error('❌ Failed to cancel intent:', errorData);
+        setErrors({ general: errorData.error || 'Failed to cancel transfer' });
+      }
+    } catch (error: any) {
+      console.error('❌ Error canceling intent:', error);
+      setErrors({ general: 'Network error. Please try again.' });
+    } finally {
+      setIsCancelingExistingIntent(false);
     }
   };
 
@@ -557,7 +641,11 @@ export default function SwapInterface() {
         depositTarget,
         amount,
         verifierAddress,
-        currency
+        currency,
+        offrampRecipient,
+        fromMethod as PaymentPlatforms,
+        offrampRecipient,
+        toMethod as PaymentPlatforms
       );
       setOnrampIntentHash(intentHash);
       handlePaymentTriggerSuccess();
@@ -648,6 +736,43 @@ export default function SwapInterface() {
     }
     return null;
   };
+
+  // Check for existing intent when user connects
+  useEffect(() => {
+    const checkForExistingIntent = async () => {
+      if (user && !continuedIntent) {
+        console.log('🔍 Checking for existing intent for user...');
+        const existingIntent = await checkExistingIntent();
+        
+        if (existingIntent) {
+          console.log('🔄 Resuming existing intent:', existingIntent);
+          
+          // Populate form fields from retrieved intent data
+          setAmount(existingIntent.amount);
+          setFromMethod(existingIntent.platform);
+          setToMethod(existingIntent.toPlatform);
+          setFromCurrency(existingIntent.currency);
+          setToCurrency(existingIntent.currency); // Same currency for now
+          setOfframpRecipient(existingIntent.toRecipient);
+          setOnrampRecipient(existingIntent.recipient);
+          setOnrampIntentHash(existingIntent.intentHash);
+          setContinuedIntent(true);
+          
+          // Show continuing banner
+          setShowContinuingBanner(true);
+          
+          // Set state to payment step in execution modal
+          setShowExecutionModal(true);
+          setExecutionStep(2);
+          setExecutionProgress(10);
+          
+          console.log('✅ Form populated and advanced to payment step for existing intent');
+        }
+      }
+    };
+
+    checkForExistingIntent();
+  }, [user, continuedIntent]);
 
   // Auto-check contract when user is available and contract is null
   useEffect(() => {
@@ -1191,6 +1316,45 @@ export default function SwapInterface() {
                   Executing Swap
                 </DialogTitle>
               </DialogHeader>
+
+              {/* Continuing Intent Banner */}
+              {showContinuingBanner && (
+                <div className='bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center justify-between'>
+                  <div className='flex items-center space-x-2'>
+                    <div className='w-3 h-3 bg-blue-600 rounded-full'></div>
+                    <span className='text-blue-800 font-medium text-sm'>Continuing with existing transfer</span>
+                  </div>
+                  <Button
+                    onClick={handleCancelExistingIntent}
+                    disabled={isCancelingExistingIntent}
+                    variant='outline'
+                    size='sm'
+                    className='text-red-600 border-red-300 hover:bg-red-50 text-xs px-2 py-1 h-6 disabled:opacity-50'
+                  >
+                    {isCancelingExistingIntent ? (
+                      <div className='flex items-center space-x-1'>
+                        <div className='w-3 h-3 border border-red-600 border-t-transparent rounded-full animate-spin'></div>
+                        <span>Canceling...</span>
+                      </div>
+                    ) : (
+                      'Cancel Transfer'
+                    )}
+                  </Button>
+                </div>
+              )}
+
+              {/* Error Display */}
+              {errors.general && (
+                <div className='bg-red-50 border border-red-200 rounded-lg p-3'>
+                  <div className='flex items-center space-x-2'>
+                    <div className='h-4 w-4 bg-red-600 rounded-full flex items-center justify-center text-white text-xs'>
+                      !
+                    </div>
+                    <span className='text-red-800 font-medium text-sm'>Error</span>
+                  </div>
+                  <p className='text-red-700 text-sm mt-1'>{errors.general}</p>
+                </div>
+              )}
 
               <div className='space-y-6'>
                 {/* Progress Bar */}

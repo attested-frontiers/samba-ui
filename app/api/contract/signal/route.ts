@@ -19,12 +19,26 @@ import {
   PaymentPlatforms,
   ZKP2PCurrencies
 } from '@/lib/types/intents';
+import { MongoClient } from 'mongodb';
+
+const MONGODB_URI = process.env.MONGODB_URI || '';
+const DB_NAME = process.env.DB_NAME || 'samba';
+const COLLECTION_NAME = 'intents';
+
+interface IntentMetadata {
+  recipient: string;
+  amount: string;
+  platform: PaymentPlatforms;
+  toRecipient: string;
+  toPlatform: PaymentPlatforms;
+}
 
 interface SignalIntentRequest {
   quote: QuoteResponse;
   amount: string;
   verifier: `0x${string}`;
   currency: ZKP2PCurrencies;
+  metadata: IntentMetadata;
 }
 
 interface SignalIntentResponse {
@@ -52,11 +66,18 @@ export async function POST(request: NextRequest): Promise<NextResponse<SignalInt
     
     // 2. Parse and validate request body
     const body: SignalIntentRequest = await request.json();
-    const { quote, amount, verifier, currency } = body;
+    const { quote, amount, verifier, currency, metadata } = body;
 
-    if (!quote || !amount || !verifier || !currency) {
+    if (!quote || !amount || !verifier || !currency || !metadata) {
       return NextResponse.json(
-        { success: false, error: 'Missing required fields: quote, amount, verifier, currency' },
+        { success: false, error: 'Missing required fields: quote, amount, verifier, currency, metadata' },
+        { status: 400 }
+      );
+    }
+
+    if (!metadata.recipient || !metadata.amount || !metadata.platform || !metadata.toRecipient || !metadata.toPlatform) {
+      return NextResponse.json(
+        { success: false, error: 'Missing required metadata fields: recipient, amount, platform, toRecipient, toPlatform' },
         { status: 400 }
       );
     }
@@ -147,6 +168,35 @@ export async function POST(request: NextRequest): Promise<NextResponse<SignalInt
     const intentHash = eventLogs[0].topics[3] as string;
     console.log(`🎯 Intent signaled successfully! Intent hash: ${intentHash}`);
 
+    // 8. Save intent metadata to MongoDB after successful contract call
+    const client = new MongoClient(MONGODB_URI);
+    try {
+      await client.connect();
+      const db = client.db(DB_NAME);
+      const collection = db.collection(COLLECTION_NAME);
+
+      const intentRecord = {
+        email: user.email,
+        intentHash,
+        txHash,
+        recipient: metadata.recipient,
+        amount: metadata.amount,
+        platform: metadata.platform,
+        toRecipient: metadata.toRecipient,
+        toPlatform: metadata.toPlatform,
+        currency,
+        createdAt: new Date(),
+      };
+
+      await collection.insertOne(intentRecord);
+      console.log(`💾 Intent saved to database for user: ${user.email}, hash: ${intentHash}`);
+    } catch (dbError) {
+      console.error('❌ Failed to save intent to database:', dbError);
+      // Don't fail the entire request if database save fails
+    } finally {
+      await client.close();
+    }
+
     return NextResponse.json({
       success: true,
       intentHash,
@@ -174,12 +224,62 @@ export async function POST(request: NextRequest): Promise<NextResponse<SignalInt
   }
 }
 
-// Also support GET for testing (remove in production)
 export async function GET(request: NextRequest) {
-  return NextResponse.json({
-    message: 'Signal Intent API endpoint',
-    description: 'POST to signal an intent on the Samba contract',
-    requiredFields: ['quote', 'amount', 'verifier', 'currency'],
-    authentication: 'Bearer token required',
-  });
+  try {
+    // Authenticate user
+    const user = await authenticateRequest(request);
+    console.log(`🔐 Authenticated user looking up intent: ${user.email}`);
+
+    // Connect to MongoDB
+    const client = new MongoClient(MONGODB_URI);
+    try {
+      await client.connect();
+      const db = client.db(DB_NAME);
+      const collection = db.collection(COLLECTION_NAME);
+
+      // Find intent by user email
+      const intentRecord = await collection.findOne({ email: user.email });
+
+      if (!intentRecord) {
+        return NextResponse.json(
+          { message: 'No intent found for user' },
+          { status: 404 }
+        );
+      }
+
+      console.log(`✅ Found existing intent for user: ${user.email}, hash: ${intentRecord.intentHash}`);
+
+      return NextResponse.json({
+        success: true,
+        intent: {
+          intentHash: intentRecord.intentHash,
+          txHash: intentRecord.txHash,
+          recipient: intentRecord.recipient,
+          amount: intentRecord.amount,
+          platform: intentRecord.platform,
+          toRecipient: intentRecord.toRecipient,
+          toPlatform: intentRecord.toPlatform,
+          currency: intentRecord.currency,
+          createdAt: intentRecord.createdAt,
+        },
+      });
+
+    } finally {
+      await client.close();
+    }
+
+  } catch (error: any) {
+    console.error('❌ Get intent failed:', error);
+
+    // Handle authentication errors specifically
+    if (error instanceof AuthenticationError) {
+      const authError = createAuthErrorResponse(error);
+      return NextResponse.json(authError, { status: authError.statusCode });
+    }
+
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
 }
