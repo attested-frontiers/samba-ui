@@ -654,11 +654,6 @@ export default function SwapInterface() {
       console.log('✅ Payment proof generated successfully!', paymentProof);
       setProofStatus('success');
       setTriggerProofFetchPolling(false);
-      // Show success notification
-      showBrowserNotification('Payment Proof Generated Successfully! 🎉', {
-        body: 'Your payment proof has been generated and verified. You can now proceed with your transaction.',
-        icon: '/samba-logo.png',
-      });
 
       // Auto-proceed to next step after 1.5 seconds
       setTimeout(() => {
@@ -670,10 +665,6 @@ export default function SwapInterface() {
       setProofStatus('error');
       setTriggerProofFetchPolling(false);
       // Show error notification
-      showBrowserNotification('Payment Proof Generation Failed ❌', {
-        body: 'There was an error generating your payment proof. Please try again.',
-        icon: '/samba-logo.png',
-      });
     } else {
       console.log('⏳ Payment proof still generating...', paymentProof);
       // keep status "generating"
@@ -1160,7 +1151,7 @@ export default function SwapInterface() {
                             </Tooltip>
                           </div>
 
-                          {/* Skip Trigger Button */}
+                          {/* Skip Trigger Button
                           <div className='flex justify-end'>
                             <Button
                               onClick={() => {
@@ -1173,7 +1164,7 @@ export default function SwapInterface() {
                             >
                               Skip Trigger
                             </Button>
-                          </div>
+                          </div> */}
 
                           {/* Error Message */}
                           {proofStatus.includes('error') && (
