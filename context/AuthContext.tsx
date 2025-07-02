@@ -8,8 +8,6 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   error: string | null;
-  isCheckingContract: boolean;
-  isDeployingContract: boolean;
   signIn: () => Promise<User | null>;
   signOut: () => Promise<void>;
   clearError: () => void;
@@ -33,65 +31,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isCheckingContract, setIsCheckingContract] = useState(false);
-  const [isDeployingContract, setIsDeployingContract] = useState(false);
-
-  const checkUserContract = async (user: User): Promise<string | null> => {
-    try {
-      const token = await user.getIdToken();
-      const response = await fetch('/api/contract/wrapper', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.wrapperContract) {
-          return data.wrapperContract;
-        } else {
-          return null;
-        }
-      } else {
-        return null;
-      }
-    } catch (error) {
-      console.error('Error checking user contract:', error);
-      return null;
-    }
-  };
-
-  const createWrapperContract = async (user: User): Promise<string | null> => {
-    try {
-      setIsDeployingContract(true);
-      const token = await user.getIdToken();
-      const response = await fetch('/api/contract/wrapper', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Wrapper contract created:', data);
-        return data.wrapperContract;
-      } else {
-        const errorData = await response.json();
-        console.error('Failed to create wrapper contract:', errorData);
-        return null;
-      }
-    } catch (error) {
-      console.error('Error creating wrapper contract:', error);
-      return null;
-    } finally {
-      setIsDeployingContract(false);
-    }
-  };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
     });
@@ -104,21 +46,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setLoading(true);
       setError(null);
       const user = await signInWithGoogle();
-      // Check if user has a contract address
-      if (user) {
-        setIsCheckingContract(true);
-        const wrapperContract = await checkUserContract(user);
-        console.log('Wrapper contract:', wrapperContract);
-        setIsCheckingContract(false);
-        if (!wrapperContract) {
-          await createWrapperContract(user);
-        }
-      }
-
       return user;
     } catch (error: any) {
       console.error('Sign in failed:', error);
-
+      
       // Handle different error types
       let errorMessage = 'Failed to sign in';
       if (error.code === 'auth/popup-closed-by-user') {
@@ -132,7 +63,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       } else if (error.message) {
         errorMessage = error.message;
       }
-
+      
       setError(errorMessage);
       return null;
     } finally {
@@ -161,12 +92,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     user,
     loading,
     error,
-    isCheckingContract,
-    isDeployingContract,
     signIn,
     signOut,
     clearError,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
