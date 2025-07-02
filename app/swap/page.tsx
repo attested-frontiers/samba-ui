@@ -60,7 +60,8 @@ const paymentMethods = [
     id: 'revolut',
     name: 'Revolut',
     logo: '🔵',
-    availableCurrencies: ['USD', 'EUR', 'GBP'],
+    // availableCurrencies: ['USD', 'EUR', 'GBP'],
+    availableCurrencies: ['USD'], // Temporarily limiting to USD
   },
 ];
 
@@ -250,6 +251,21 @@ export default function SwapInterface() {
         setFromCurrency(otherCurrency);
       }
     }
+  };
+
+  const handleSwapSections = () => {
+    // Swap currencies
+    const tempCurrency = fromCurrency;
+    setFromCurrency(toCurrency);
+    setToCurrency(tempCurrency);
+
+    // Swap payment methods
+    const tempMethod = fromMethod;
+    setFromMethod(toMethod);
+    setToMethod(tempMethod);
+
+    // Request connection for the new fromMethod
+    requestConnection();
   };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -905,9 +921,13 @@ export default function SwapInterface() {
 
                 {/* Swap Arrow */}
                 <div className='flex justify-center'>
-                  <div className='w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center'>
+                  <button
+                    onClick={handleSwapSections}
+                    disabled={currentStep !== 1}
+                    className='w-10 h-10 bg-gray-100 hover:bg-gray-200 disabled:hover:bg-gray-100 rounded-full flex items-center justify-center transition-colors cursor-pointer disabled:cursor-not-allowed'
+                  >
                     <ArrowUpDown className='h-5 w-5 text-gray-600' />
-                  </div>
+                  </button>
                 </div>
 
                 {/* To Section */}
