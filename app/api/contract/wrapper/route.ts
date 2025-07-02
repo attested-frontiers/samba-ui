@@ -31,8 +31,8 @@ export async function GET(request: NextRequest) {
                 });
             }
 
-        } finally {
-            await client.close();
+        } catch (error) {
+            console.error('Error checking contract address:', error);
         }
 
     } catch (error) {
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
 
             return NextResponse.json({
                 message: 'Wrapper contract deployed and saved successfully',
-                wrapperContract: wrapperContract.address
+                wrapperContract
             });
 
         } finally {
