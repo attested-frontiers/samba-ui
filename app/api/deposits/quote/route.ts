@@ -1,11 +1,16 @@
-import { NextResponse } from 'next/server';
-import { MarketMakerMetadata, PayeeDetailsResponse, Quote, QuoteRequest } from '@/lib/types/intents';
+import { NextRequest, NextResponse } from 'next/server';
+import { PayeeDetailsResponse, Quote, QuoteRequest } from '@/lib/types/intents';
+import { getWrapperContractByEmail } from "@/lib/contract-utils";
+import { authenticateRequest, createAuthErrorResponse, AuthenticationError } from "@/lib/auth-middleware";
 
 const API_URL_BASE = process.env.ZKP2P_API_URL || 'https://api.zkp2p.xyz/v1';
 const QUOTE_API_URL = `${API_URL_BASE}/quote/exact-fiat?quotesToReturn=5`;
 const ZKP2P_API_KEY = process.env.ZKP2P_API_KEY;
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+    const user = await authenticateRequest(req);
+    console.log(`🔐 Authenticated user: ${user.email}`);
+
     let quoteRequest: QuoteRequest;
     // parse the quote request
     try {
@@ -14,6 +19,9 @@ export async function POST(req: Request) {
         console.error('Error parsing quote body:', error);
         return NextResponse.json({ error: 'Invalid quote request' }, { status: 400 });
     }
+
+    const wrapperContract = await getWrapperContractByEmail(user.email || '');
+
     // prepare the actual input for the ZKP2P API
     const payload = {
         paymentPlatforms: [
@@ -21,7 +29,7 @@ export async function POST(req: Request) {
         ],
         fiatCurrency: quoteRequest.fiatCurrency,
         user: quoteRequest.user,
-        recipient: process.env.NEXT_PUBLIC_SAMBA_CONTRACT,
+        recipient: wrapperContract,
         destinationChainId: parseInt(process.env.NEXT_PUBLIC_CHAIN_ID!),
         destinationToken: process.env.NEXT_PUBLIC_USDC_CONTRACT,
         exactFiatAmount: quoteRequest.amount
@@ -84,6 +92,14 @@ export async function POST(req: Request) {
         }
         payeeDetails = await detailsResponse.json().then(data => data.responseObject);
     } catch (error) {
+
+        // Handle authentication errors specifically
+        if (error instanceof AuthenticationError) {
+            const authError = createAuthErrorResponse(error);
+            return NextResponse.json(authError, { status: authError.statusCode });
+        }
+
+
         console.error('Error fetching payment details:', error);
         return NextResponse.json({ error: 'Error fetching payment details from ZKP2P' }, { status: 500 });
     }
