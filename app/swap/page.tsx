@@ -93,6 +93,7 @@ export default function SwapInterface() {
   const [submissionError, setSubmissionError] = useState<string>('');
   const [showConnectionModal, setShowConnectionModal] = useState(false);
   const [showVersionModal, setShowVersionModal] = useState(false);
+  const [showInstallModal, setShowInstallModal] = useState(false);
 
   // Proof management state
   const [proofStatus, setProofStatus] = useState<
@@ -741,6 +742,13 @@ export default function SwapInterface() {
       }
     }
   }, [isSidebarInstalled, sideBarVersion]);
+
+  // Handle extension installation check
+  useEffect(() => {
+    if (isSidebarInstalled === false) {
+      setShowInstallModal(true);
+    }
+  }, [isSidebarInstalled]);
 
   const renderPaymentStatus = () => {
     return isPaymentFound ? 'Found payment' : 'Not found payment';
@@ -1497,6 +1505,37 @@ export default function SwapInterface() {
                   <p className='text-gray-600'>
                     Please update your PeerAuth extension to the latest version.
                   </p>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Extension Installation Modal */}
+          <Dialog open={showInstallModal} onOpenChange={setShowInstallModal}>
+            <DialogContent className='sm:max-w-md'>
+              <DialogHeader>
+                <DialogTitle className='text-center text-blue-600'>
+                  PeerAuth Extension Required
+                </DialogTitle>
+              </DialogHeader>
+              <div className='space-y-4'>
+                <div className='text-center py-4'>
+                  <div className='w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4'>
+                    <div className='w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-lg font-bold'>
+                      !
+                    </div>
+                  </div>
+                  <p className='text-gray-600 mb-4'>
+                    This app requires the PeerAuth extension to be installed. Please install to continue.
+                  </p>
+                  <Button
+                    onClick={() => {
+                      window.open('https://chromewebstore.google.com/detail/peerauth-authenticate-and/ijpgccednehjpeclfcllnjjcmiohdjih', '_blank');
+                    }}
+                    className='w-full bg-blue-600 hover:bg-blue-700 text-white'
+                  >
+                    Install PeerAuth Extension
+                  </Button>
                 </div>
               </div>
             </DialogContent>
