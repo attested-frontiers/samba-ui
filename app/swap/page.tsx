@@ -41,6 +41,8 @@ import {
 } from '@/lib/types/intents';
 import { parseUnits } from 'viem';
 import { deposit } from 'viem/zksync';
+import { ExtensionRequestMetadata } from '@/lib/types';
+import { metadata } from '../layout';
 
 // Constants for proof polling
 const PROOF_FETCH_INTERVAL = 2000; // 2 seconds
@@ -89,7 +91,7 @@ export default function SwapInterface() {
   const [isPaymentFound, setIsPaymentFound] = useState(false);
   const [isGettingQuote, setIsGettingQuote] = useState(false);
   const [onrampIntentHash, setOnrampIntentHash] = useState<string | null>(
-    '0x1e079e8b950290f0b7fa7321de5cba1800643aab1e12856b832a405321a57318'
+    '0x00a8e4a16b87c1ef98e11ca99dcb7f0c0ca0ca0464e26f89fb16b8dc4b25c6f7'
   );
   const [isCancelingIntent, setIsCancelingIntent] = useState(false);
   const [paymentTriggerError, setPaymentTriggerError] = useState<string>('');
@@ -186,15 +188,13 @@ export default function SwapInterface() {
     const toMethodCurrencies = getAvailableCurrencies(toMethod);
 
     if (!fromMethodCurrencies.includes(fromCurrency)) {
-      newErrors.currency = `${fromCurrency} is not available for ${
-        paymentMethods.find((m) => m.id === fromMethod)?.name
-      }`;
+      newErrors.currency = `${fromCurrency} is not available for ${paymentMethods.find((m) => m.id === fromMethod)?.name
+        }`;
     }
 
     if (!toMethodCurrencies.includes(toCurrency)) {
-      newErrors.currency = `${toCurrency} is not available for ${
-        paymentMethods.find((m) => m.id === toMethod)?.name
-      }`;
+      newErrors.currency = `${toCurrency} is not available for ${paymentMethods.find((m) => m.id === toMethod)?.name
+        }`;
     }
 
     // Ensure we're swapping between different methods
@@ -588,17 +588,30 @@ export default function SwapInterface() {
         metadataCount: metadataArray.length,
       });
 
-      console.log('transfer amount with formatting: ', `- $${amount}`);
-      console.log('transfer amount', amount);
-      console.log('expected recipient: ', onrampRecipient);
-      console.log('name 0', metadataArray[0]?.recipient);
-      console.log('amount 0', metadataArray[0]?.amount);
+      console.log("metadata array", metadataArray);
 
-      const match = metadataArray.find(
-        (transfer: any) =>
-          transfer.recipient.toLowerCase() === onrampRecipient.toLowerCase() &&
-          transfer.amount === `- $${amount}`
-      );
+      // match logic per platform
+      // todo: probably much more elegant way to do this 
+      let match: ExtensionRequestMetadata | undefined = undefined;
+      if (fromMethod === 'venmo') {
+        match = metadataArray.find(
+          (transfer: any) =>
+            transfer.recipient &&
+            transfer.amount &&
+            transfer.recipient.toLowerCase() === onrampRecipient.toLowerCase() &&
+            transfer.amount === `- $${amount}`
+        );
+      } else if (fromMethod === 'revolut') {
+        const amountNormalized = parseInt(amount.replace(/\./g, '').replace(/^0+/, '')) * -1;
+        match = metadataArray.find(
+          (transfer: any) =>
+            transfer.recipient &&
+            transfer.amount &&
+            transfer.recipient.toLowerCase() === onrampRecipient.toLowerCase() &&
+            transfer.amount === amountNormalized
+        );
+      }
+
 
       if (match) {
         console.log('✅ Payment match found:', match);
@@ -798,30 +811,27 @@ export default function SwapInterface() {
             {steps.map((step, index) => (
               <div key={step.number} className='flex items-center'>
                 <div
-                  className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
-                    currentStep >= step.number
-                      ? 'bg-primary border-primary text-white'
-                      : 'border-gray-300 text-gray-400'
-                  }`}
+                  className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${currentStep >= step.number
+                    ? 'bg-primary border-primary text-white'
+                    : 'border-gray-300 text-gray-400'
+                    }`}
                 >
                   {step.number}
                 </div>
                 <div className='ml-2 mr-8'>
                   <div
-                    className={`text-sm font-medium ${
-                      currentStep >= step.number
-                        ? 'text-primary'
-                        : 'text-gray-400'
-                    }`}
+                    className={`text-sm font-medium ${currentStep >= step.number
+                      ? 'text-primary'
+                      : 'text-gray-400'
+                      }`}
                   >
                     {step.title}
                   </div>
                 </div>
                 {index < steps.length - 1 && (
                   <div
-                    className={`w-16 h-0.5 mr-8 ${
-                      currentStep > step.number ? 'bg-primary' : 'bg-gray-300'
-                    }`}
+                    className={`w-16 h-0.5 mr-8 ${currentStep > step.number ? 'bg-primary' : 'bg-gray-300'
+                      }`}
                   />
                 )}
               </div>
@@ -1432,22 +1442,20 @@ export default function SwapInterface() {
                         className='flex flex-col items-center space-y-1'
                       >
                         <div
-                          className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
-                            status === 'completed'
-                              ? 'bg-green-500 text-white'
-                              : status === 'current'
+                          className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${status === 'completed'
+                            ? 'bg-green-500 text-white'
+                            : status === 'current'
                               ? 'bg-secondary text-white'
                               : 'bg-gray-200 text-gray-500'
-                          }`}
+                            }`}
                         >
                           {status === 'completed' ? '✓' : stepNum}
                         </div>
                         <span
-                          className={`text-center ${
-                            status === 'current'
-                              ? 'text-secondary font-medium'
-                              : 'text-gray-500'
-                          }`}
+                          className={`text-center ${status === 'current'
+                            ? 'text-secondary font-medium'
+                            : 'text-gray-500'
+                            }`}
                         >
                           {label}
                         </span>

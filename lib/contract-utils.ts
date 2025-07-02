@@ -21,7 +21,7 @@ const COLLECTION_NAME = 'user';
 /**
  * Helper function to get wrapper contract address from MongoDB by email
  */
-export async function getWrapperContractByEmail(email: string): Promise<string | null> {
+export async function getWrapperContractByEmail(email: string): Promise<`0x${string}` | null> {
   const client = new MongoClient(MONGODB_URI);
 
   try {
@@ -62,7 +62,8 @@ export function calculateConvertedAmount(
 export function prepareSignalIntentPayload(
   quote: QuoteResponse,
   amount: string,
-  currency: ZKP2PCurrencies
+  currency: ZKP2PCurrencies,
+  wrapperContract: `0x${string}`
 ): IntentSignalRequest {
   const { chainId, samba: sambaContractAddress } = getContractAddresses();
 
@@ -82,7 +83,7 @@ export function prepareSignalIntentPayload(
     depositId: depositId,
     tokenAmount: amountConverted,
     payeeDetails: quote.details.hashedOnchainId,
-    toAddress: sambaContractAddress,
+    toAddress: wrapperContract,
     fiatCurrencyCode: currencyHash,
     chainId: chainId,
   };

@@ -44,7 +44,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<FulfillAn
     const user = await authenticateRequest(request);
     console.log(`🔐 Authenticated user: ${user.email}`);
 
-    // 2. Parse and validate request body
+    // 2. Get the contract address
+    const wrapperContract = await getWrapperContractByEmail(user.email || '');
+
+    // 3. Parse and validate request body
     const body: FulfillAndOnrampRequest = await request.json();
     const {
       amount,
@@ -73,7 +76,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<FulfillAn
       proofStatus: onrampProof ? 'provided' : 'missing',
     });
 
-    // 3. Prepare fulfill and onramp parameters
+    // 4. Prepare fulfill and onramp parameters
     console.log(`🔧 Preparing fulfill and onramp parameters...`);
 
     // Get the payee details hash from ZKP2P API
