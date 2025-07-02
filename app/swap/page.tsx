@@ -102,6 +102,8 @@ export default function SwapInterface() {
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [depositId, setDepositId] = useState<string | null>(null);
   const [userWrapperContract, setUserWrapperContract] = useState<string | null>(null);
+  const [continuedIntent, setContinuedIntent] = useState<boolean>(false);
+  const [showContinuingBanner, setShowContinuingBanner] = useState<boolean>(false);
 
   // Proof management state
   const [proofStatus, setProofStatus] = useState<
@@ -193,6 +195,41 @@ export default function SwapInterface() {
       console.error('Error ensuring wrapper contract:', error);
       return null;
     }
+  };
+
+  // Check for existing intent
+  const checkExistingIntent = async (): Promise<any | null> => {
+    if (!user) return null;
+
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch('/api/contract/signal', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ Found existing intent:', data.intent);
+        return data.intent;
+      } else if (response.status === 404) {
+        console.log('ℹ️ No existing intent found for user');
+        return null;
+      } else {
+        console.error('Error checking existing intent');
+        return null;
+      }
+    } catch (error) {
+      console.error('Error checking existing intent:', error);
+      return null;
+    }
+  };
+
+  // Cancel existing intent handler (placeholder)
+  const handleCancelExistingIntent = () => {
+    console.log('cancel intent');
   };
 
   const validateForm = () => {
@@ -559,7 +596,9 @@ export default function SwapInterface() {
         verifierAddress,
         currency,
         offrampRecipient,
-        fromMethod as PaymentPlatforms
+        fromMethod as PaymentPlatforms,
+        offrampRecipient,
+        toMethod as PaymentPlatforms
       );
       setOnrampIntentHash(intentHash);
       handlePaymentTriggerSuccess();
@@ -650,6 +689,43 @@ export default function SwapInterface() {
     }
     return null;
   };
+
+  // Check for existing intent when user connects
+  useEffect(() => {
+    const checkForExistingIntent = async () => {
+      if (user && !continuedIntent) {
+        console.log('🔍 Checking for existing intent for user...');
+        const existingIntent = await checkExistingIntent();
+        
+        if (existingIntent) {
+          console.log('🔄 Resuming existing intent:', existingIntent);
+          
+          // Populate form fields from retrieved intent data
+          setAmount(existingIntent.amount);
+          setFromMethod(existingIntent.platform);
+          setToMethod(existingIntent.toPlatform);
+          setFromCurrency(existingIntent.currency);
+          setToCurrency(existingIntent.currency); // Same currency for now
+          setOfframpRecipient(existingIntent.toRecipient);
+          setOnrampRecipient(existingIntent.recipient);
+          setOnrampIntentHash(existingIntent.intentHash);
+          setContinuedIntent(true);
+          
+          // Show continuing banner
+          setShowContinuingBanner(true);
+          
+          // Set state to payment step in execution modal
+          setShowExecutionModal(true);
+          setExecutionStep(2);
+          setExecutionProgress(10);
+          
+          console.log('✅ Form populated and advanced to payment step for existing intent');
+        }
+      }
+    };
+
+    checkForExistingIntent();
+  }, [user, continuedIntent]);
 
   // Auto-check contract when user is available and contract is null
   useEffect(() => {
@@ -884,6 +960,26 @@ export default function SwapInterface() {
             </div>
           </nav>
         </header>
+
+        {/* Continuing Intent Banner */}
+        {showContinuingBanner && (
+          <div className='container mx-auto px-4 py-2 max-w-2xl'>
+            <div className='bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between'>
+              <div className='flex items-center space-x-2'>
+                <div className='w-4 h-4 bg-blue-600 rounded-full'></div>
+                <span className='text-blue-800 font-medium'>Continuing with existing intent</span>
+              </div>
+              <Button
+                onClick={handleCancelExistingIntent}
+                variant='outline'
+                size='sm'
+                className='text-red-600 border-red-300 hover:bg-red-50'
+              >
+                Cancel Intent
+              </Button>
+            </div>
+          </div>
+        )}
 
         <div className='container mx-auto px-4 py-8 max-w-2xl'>
           {/* Progress Steps */}

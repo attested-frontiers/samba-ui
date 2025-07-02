@@ -15,6 +15,8 @@ interface IntentMetadata {
   recipient: string;
   amount: string;
   platform: PaymentPlatforms;
+  toRecipient: string;
+  toPlatform: PaymentPlatforms;
 }
 
 interface SignalIntentRequest {
@@ -60,7 +62,9 @@ export async function signalIntent(
   verifier: `0x${string}`,
   currency: ZKP2PCurrencies,
   recipient: string,
-  platform: PaymentPlatforms
+  platform: PaymentPlatforms,
+  toRecipient: string,
+  toPlatform: PaymentPlatforms
 ): Promise<string> {
   const requestBody: SignalIntentRequest = {
     quote,
@@ -71,6 +75,8 @@ export async function signalIntent(
       recipient,
       amount,
       platform,
+      toRecipient,
+      toPlatform,
     },
   };
 

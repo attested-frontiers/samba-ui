@@ -29,6 +29,8 @@ interface IntentMetadata {
   recipient: string;
   amount: string;
   platform: PaymentPlatforms;
+  toRecipient: string;
+  toPlatform: PaymentPlatforms;
 }
 
 interface SignalIntentRequest {
@@ -73,9 +75,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<SignalInt
       );
     }
 
-    if (!metadata.recipient || !metadata.amount || !metadata.platform) {
+    if (!metadata.recipient || !metadata.amount || !metadata.platform || !metadata.toRecipient || !metadata.toPlatform) {
       return NextResponse.json(
-        { success: false, error: 'Missing required metadata fields: recipient, amount, platform' },
+        { success: false, error: 'Missing required metadata fields: recipient, amount, platform, toRecipient, toPlatform' },
         { status: 400 }
       );
     }
@@ -180,6 +182,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<SignalInt
         recipient: metadata.recipient,
         amount: metadata.amount,
         platform: metadata.platform,
+        toRecipient: metadata.toRecipient,
+        toPlatform: metadata.toPlatform,
         currency,
         createdAt: new Date(),
       };
@@ -253,6 +257,8 @@ export async function GET(request: NextRequest) {
           recipient: intentRecord.recipient,
           amount: intentRecord.amount,
           platform: intentRecord.platform,
+          toRecipient: intentRecord.toRecipient,
+          toPlatform: intentRecord.toPlatform,
           currency: intentRecord.currency,
           createdAt: intentRecord.createdAt,
         },

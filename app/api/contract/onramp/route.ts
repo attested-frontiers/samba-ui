@@ -20,6 +20,11 @@ import {
   ZKP2PCurrencies
 } from '@/lib/types/intents';
 import { Proof } from '@/lib/types';
+import { MongoClient } from 'mongodb';
+
+const MONGODB_URI = process.env.MONGODB_URI || '';
+const DB_NAME = process.env.DB_NAME || 'samba';
+const COLLECTION_NAME = 'intents';
 
 interface FulfillAndOnrampRequest {
   amount: string;
@@ -202,6 +207,27 @@ export async function POST(request: NextRequest): Promise<NextResponse<FulfillAn
     console.log(`💰 Deposit ID: ${depositId}`);
     console.log(`🎉 Fulfill and offramp completed successfully!`);
     console.log(`📋 Transaction confirmed in block: ${receipt.blockNumber}`);
+
+    // 7. Delete intent record from database after successful completion
+    const client = new MongoClient(MONGODB_URI);
+    try {
+      await client.connect();
+      const db = client.db(DB_NAME);
+      const collection = db.collection(COLLECTION_NAME);
+
+      const deleteResult = await collection.deleteOne({ email: user.email });
+      
+      if (deleteResult.deletedCount > 0) {
+        console.log(`🗑️ Intent record deleted for user: ${user.email}`);
+      } else {
+        console.log(`ℹ️ No intent record found to delete for user: ${user.email} (this is fine)`);
+      }
+    } catch (dbError) {
+      console.error('❌ Failed to delete intent from database:', dbError);
+      // Don't fail the entire request if database deletion fails
+    } finally {
+      await client.close();
+    }
 
     return NextResponse.json({
       success: true,
