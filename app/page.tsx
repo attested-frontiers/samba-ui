@@ -31,12 +31,33 @@ export default function LandingPage() {
   }, []);
 
   if (!mounted || loading) {
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   // If user is authenticated and not checking/deploying contract, show swap interface
   if (user && !isCheckingContract && !isDeployingContract) {
     return <SwapInterface />;
+  }
+
+  // Show loading state when checking or deploying contracts
+  if (user && (isCheckingContract || isDeployingContract)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">
+            {isDeployingContract ? 'Deploying contract...' : 'Checking for wrapper contract...'}
+          </p>
+        </div>
+      </div>
+    );
   }
 
   const handleSignIn = async () => {
