@@ -250,8 +250,8 @@ export default function SwapInterface() {
         console.log('✅ Intent canceled successfully');
         
         // Show success notification
-        showBrowserNotification('Order Canceled', {
-          body: 'Your existing intent has been canceled successfully.',
+        showBrowserNotification('Transfer Canceled', {
+          body: 'Your existing transfer has been canceled successfully.',
           icon: '/samba-logo.png',
         });
 
@@ -269,7 +269,7 @@ export default function SwapInterface() {
         // Error: show error message
         const errorData = await response.json();
         console.error('❌ Failed to cancel intent:', errorData);
-        setErrors({ general: errorData.error || 'Failed to cancel intent' });
+        setErrors({ general: errorData.error || 'Failed to cancel transfer' });
       }
     } catch (error: any) {
       console.error('❌ Error canceling intent:', error);
@@ -1322,7 +1322,7 @@ export default function SwapInterface() {
                 <div className='bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center justify-between'>
                   <div className='flex items-center space-x-2'>
                     <div className='w-3 h-3 bg-blue-600 rounded-full'></div>
-                    <span className='text-blue-800 font-medium text-sm'>Continuing with existing intent</span>
+                    <span className='text-blue-800 font-medium text-sm'>Continuing with existing transfer</span>
                   </div>
                   <Button
                     onClick={handleCancelExistingIntent}
@@ -1337,7 +1337,7 @@ export default function SwapInterface() {
                         <span>Canceling...</span>
                       </div>
                     ) : (
-                      'Cancel Intent'
+                      'Cancel Transfer'
                     )}
                   </Button>
                 </div>
