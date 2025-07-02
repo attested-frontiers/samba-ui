@@ -34,6 +34,7 @@ export default function LandingPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
+          <img src='/samba-logo.png' alt='Samba' className='w-16 h-16 mx-auto mb-4' />
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading...</p>
         </div>
@@ -51,6 +52,7 @@ export default function LandingPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
+          <img src='/samba-logo.png' alt='Samba' className='w-16 h-16 mx-auto mb-4' />
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">
             {isDeployingContract ? 'Deploying contract...' : 'Checking for wrapper contract...'}
