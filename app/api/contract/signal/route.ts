@@ -39,7 +39,17 @@ export async function POST(request: NextRequest): Promise<NextResponse<SignalInt
     // 1. Authenticate user
     const user = await authenticateRequest(request);
     console.log(`🔐 Authenticated user: ${user.email}`);
-
+    let wrapperContract: `0x${string}` | null = null;
+    try {
+       wrapperContract = await getWrapperContractByEmail(user.email || '');
+    } catch (error) {
+      console.error('Error retrieving wrapper contract:', error);
+      return NextResponse.json(
+        { success: false, error: 'Error retrieving wrapper contract' },
+        { status: 404 }
+      );
+    };
+    
     // 2. Parse and validate request body
     const body: SignalIntentRequest = await request.json();
     const { quote, amount, verifier, currency } = body;
@@ -60,7 +70,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<SignalInt
     });
 
     // 3. Prepare signal intent payload
-    const payload = prepareSignalIntentPayload(quote, amount, currency);
+    const payload = prepareSignalIntentPayload(quote, amount, currency, wrapperContract!);
     console.log(`📦 Signal Intent Payload:`, payload);
 
     // 4. Get gating service signature from ZKP2P API
@@ -119,8 +129,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<SignalInt
     });
 
     // 6. Execute signal intent transaction
-    const wrapperContractAddress = await getWrapperContractByEmail(user.email || '');
-    const contract = createSambaContract(wrapperContractAddress as `0x${string}` || '0x');
+    const contract = createSambaContract(wrapperContract!);
     const txHash = await executeContractTransaction(
       contract,
       'signalIntent',
