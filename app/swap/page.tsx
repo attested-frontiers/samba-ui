@@ -300,10 +300,12 @@ export default function SwapInterface() {
       user: '0x1234567890123456789012345678901234567890' as `0x${string}`, // Placeholder address
     };
     let data: QuoteResponse;
+    const token = await user?.getIdToken();
     try {
       const response = await fetch('/api/deposits/quote', {
         method: 'POST',
         headers: {
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(request),
@@ -315,7 +317,6 @@ export default function SwapInterface() {
         throw new Error(errorData.error || 'Failed to prepare swap');
       }
       data = (await response.json()) as QuoteResponse;
-      console.log('QUOTE DATA: ', data);
       setDepositTarget(data);
       if (fromMethod === 'venmo') {
         setOnrampRecipient(data.details.depositData.venmoUsername!);
