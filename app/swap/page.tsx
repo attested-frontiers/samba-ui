@@ -687,6 +687,7 @@ export default function SwapInterface() {
 
   const handleTriggerProof = () => {
     // determine action
+    console.log("attempting to open tab")
     let proofAction = {
       platform: '',
       action: '',
@@ -1593,6 +1594,13 @@ export default function SwapInterface() {
                                   {onrampRecipient} of value ${amount}. Please
                                   make the payment and try again.
                                 </p>
+                                <Button
+                                  onClick={handleTriggerProof}
+                                  className='mt-2 text-xs px-3 py-1 h-auto bg-red-600 hover:bg-red-700 text-white'
+                                  size='sm'
+                                >
+                                  Retry
+                                </Button>
                               </div>
                             )}
                           </div>
