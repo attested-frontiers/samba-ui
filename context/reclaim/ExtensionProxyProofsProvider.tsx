@@ -27,6 +27,7 @@ const ExtensionNotarizationsProvider = ({ children }: ProvidersProps) => {
    */
 
   const [isSidebarInstalled, setIsSidebarInstalled] = useState<boolean>(false);
+  const [isConnectionApproved, setIsConnectionApproved] = useState<boolean | null>(null);
   const [sideBarVersion, setSideBarVersion] = useState<string | null>(null);
   const [proofId, setProofId] = useState<string | null>(null);
   const [paymentProof, setPaymentProof] = useState<ExtensionNotaryProofRequest | null>(null);
@@ -55,6 +56,11 @@ const ExtensionNotarizationsProvider = ({ children }: ProvidersProps) => {
 
     console.log('Posted Message: ', ExtensionPostMessage.OPEN_SIDEBAR, route);
   };
+
+  const requestConnection = () => {
+    window.postMessage({ type: ExtensionPostMessage.REQUEST_CONNECTION });
+    console.log('Posted Message: ', ExtensionPostMessage.REQUEST_CONNECTION);
+  }
 
   /*
    * Generate Transfer Proof
@@ -109,19 +115,15 @@ const ExtensionNotarizationsProvider = ({ children }: ProvidersProps) => {
 
     if (event.data.type && event.data.type === ExtensionReceiveMessage.EXTENSION_VERSION_RESPONSE) {
       handleExtensionVersionMessageReceived(event);
-    };
-
-    if (event.data.type && event.data.type === ExtensionReceiveMessage.METADATA_MESSAGES_RESPONSE) {
+    } else if (event.data.type && event.data.type === ExtensionReceiveMessage.METADATA_MESSAGES_RESPONSE) {
       handleExtensionMetadataMessagesResponse(event);
-    };
-
-    if (event.data.type && event.data.type === ExtensionReceiveMessage.FETCH_PROOF_REQUEST_ID_RESPONSE) {
+    } else if (event.data.type && event.data.type === ExtensionReceiveMessage.FETCH_PROOF_REQUEST_ID_RESPONSE) {
       handleExtensionProofIdMessageReceived(event);
-    };
-
-    if (event.data.type && event.data.type === ExtensionReceiveMessage.FETCH_PROOF_BY_ID_RESPONSE) {
+    } else if (event.data.type && event.data.type === ExtensionReceiveMessage.FETCH_PROOF_BY_ID_RESPONSE) {
       handleExtensionProofByIdMessageReceived(event);
-    };
+    } else if (event.data.type && event.data.type === ExtensionReceiveMessage.CONNECTION_APPROVAL_RESPONSE) {
+      handleConnectionApprovalMessageReceived(event);
+    }
   };
 
   const handleExtensionVersionMessageReceived = function (event: ExtensionEventVersionMessage) {
@@ -176,6 +178,17 @@ const ExtensionNotarizationsProvider = ({ children }: ProvidersProps) => {
     }
   };
 
+  const handleConnectionApprovalMessageReceived = function (event: ExtensionEventMessage) {
+    console.log("Client received CONNECTION_APPROVAL_RESPONSE message");
+    console.log('event.data', event.data);
+
+    if (event.data.approved === true) {
+      setIsConnectionApproved(true);
+    } else {
+      setIsConnectionApproved(false);
+    }
+  }
+
   /*
    * Hooks
    */
@@ -214,23 +227,25 @@ const ExtensionNotarizationsProvider = ({ children }: ProvidersProps) => {
 
   return (
     <ExtensionProxyProofsContext.Provider
-    value= {{
-    isSidebarInstalled,
-      sideBarVersion,
-      refetchExtensionVersion,
-      openNewTab,
-      openSidebar,
-      platformMetadata,
-      paymentProof,
-      generatePaymentProof,
-      fetchPaymentProof,
-      resetProofState,
-    }
-}
-  >
-  { children }
-  </ExtensionProxyProofsContext.Provider>
-);
+      value={{
+        isSidebarInstalled,
+        sideBarVersion,
+        refetchExtensionVersion,
+        isConnectionApproved,
+        requestConnection,
+        openNewTab,
+        openSidebar,
+        platformMetadata,
+        paymentProof,
+        generatePaymentProof,
+        fetchPaymentProof,
+        resetProofState,
+      }
+      }
+    >
+      {children}
+    </ExtensionProxyProofsContext.Provider>
+  );
 };
 
 export default ExtensionNotarizationsProvider;

@@ -32,7 +32,7 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { CheckCircle, Clock, ArrowRight } from 'lucide-react';
 import useExtensionProxyProofs from '@/hooks/useExtensionProxyProofs';
-import { formatDecimalString, platformToVerifier } from '@/lib/utils';
+import { formatDecimalString, platformToVerifier, checkExtensionVersion } from '@/lib/utils';
 import {
   PaymentPlatforms,
   QuoteRequest,
@@ -65,12 +65,10 @@ const paymentMethods = [
 export default function SwapInterface() {
   const { user, loading, signOut } = useAuth();
   // const { address } = useAccount();
-  // const { samba } = useContracts();
+  // const { samba } = useContSracts();
   // const { disconnect } = useDisconnect();
 
   // Temporary placeholder values for web3 functionality
-  const address = '0x1234...5678'; // Placeholder
-  const samba = null; // Will be replaced with backend API calls
   const [currentStep, setCurrentStep] = useState(1);
   const [proofIndex, setProofIndex] = useState<number | null>(null);
   const [fromCurrency, setFromCurrency] = useState('USD');
@@ -96,6 +94,9 @@ export default function SwapInterface() {
   const [isCancelingIntent, setIsCancelingIntent] = useState(false);
   const [paymentTriggerError, setPaymentTriggerError] = useState<string>('');
   const [submissionError, setSubmissionError] = useState<string>('');
+  const [showConnectionModal, setShowConnectionModal] = useState(false);
+  const [showVersionModal, setShowVersionModal] = useState(false);
+  const [showInstallModal, setShowInstallModal] = useState(false);
 
   // Proof management state
   const [proofStatus, setProofStatus] = useState<
@@ -111,6 +112,8 @@ export default function SwapInterface() {
     sideBarVersion,
     refetchExtensionVersion,
     openNewTab,
+    isConnectionApproved,
+    requestConnection,
     openSidebar,
     platformMetadata,
     paymentProof,
@@ -206,6 +209,7 @@ export default function SwapInterface() {
   const handleFromMethodChange = (newMethod: string) => {
     setFromMethod(newMethod);
     setToMethod(getOtherPaymentMethod(newMethod));
+    requestConnection(); // HERE
 
     // Update currencies to valid ones for the new methods
     const newFromCurrencies = getAvailableCurrencies(newMethod);
@@ -718,6 +722,37 @@ export default function SwapInterface() {
       }
     }
   }, [proofStatus, intervalId]);
+
+  // Handle connection approval state changes
+  useEffect(() => {
+    console.log('Connection approval state changed:', isConnectionApproved);
+    if (isConnectionApproved === null) {
+      // First attempt to connect
+      requestConnection();
+    } else if (isConnectionApproved === false) {
+      // Connection denied, show modal
+      setShowConnectionModal(true);
+    } else if (isConnectionApproved === true) {
+      setShowConnectionModal(false);
+    }
+  }, [isConnectionApproved, requestConnection]);
+
+  // Handle extension version compatibility
+  useEffect(() => {
+    if (isSidebarInstalled && sideBarVersion) {
+      const isCompatible = checkExtensionVersion(sideBarVersion);
+      if (!isCompatible) {
+        setShowVersionModal(true);
+      }
+    }
+  }, [isSidebarInstalled, sideBarVersion]);
+
+  // Handle extension installation check
+  useEffect(() => {
+    if (isSidebarInstalled === false) {
+      setShowInstallModal(true);
+    }
+  }, [isSidebarInstalled]);
 
   const renderPaymentStatus = () => {
     return isPaymentFound ? 'Found payment' : 'Not found payment';
@@ -1419,6 +1454,92 @@ export default function SwapInterface() {
                       </div>
                     );
                   })}
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Connection Modal */}
+          <Dialog open={showConnectionModal} onOpenChange={setShowConnectionModal}>
+            <DialogContent className='sm:max-w-md'>
+              <DialogHeader>
+                <DialogTitle className='text-center text-red-600'>
+                  PeerAuth Connection Denied
+                </DialogTitle>
+              </DialogHeader>
+              <div className='space-y-4'>
+                <div className='text-center py-4'>
+                  <div className='w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4'>
+                    <div className='w-8 h-8 bg-red-600 rounded-full flex items-center justify-center text-white text-lg font-bold'>
+                      !
+                    </div>
+                  </div>
+                  <p className='text-gray-600 mb-4'>
+                    PeerAuth connection denied, please connect
+                  </p>
+                  <Button
+                    onClick={requestConnection}
+                    className='w-full bg-red-600 hover:bg-red-700 text-white'
+                  >
+                    Connect PeerAuth
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Version Incompatibility Modal */}
+          <Dialog open={showVersionModal} onOpenChange={setShowVersionModal}>
+            <DialogContent className='sm:max-w-md'>
+              <DialogHeader>
+                <DialogTitle className='text-center text-amber-600'>
+                  PeerAuth Version Incompatible
+                </DialogTitle>
+              </DialogHeader>
+              <div className='space-y-4'>
+                <div className='text-center py-4'>
+                  <div className='w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4'>
+                    <div className='w-8 h-8 bg-amber-600 rounded-full flex items-center justify-center text-white text-lg font-bold'>
+                      !
+                    </div>
+                  </div>
+                  <p className='text-gray-600 mb-2'>
+                    Your current PeerAuth version is <strong>{sideBarVersion}</strong>.
+                  </p>
+                  <p className='text-gray-600'>
+                    Please update your PeerAuth extension to the latest version.
+                  </p>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Extension Installation Modal */}
+          <Dialog open={showInstallModal} onOpenChange={setShowInstallModal}>
+            <DialogContent className='sm:max-w-md'>
+              <DialogHeader>
+                <DialogTitle className='text-center text-blue-600'>
+                  PeerAuth Extension Required
+                </DialogTitle>
+              </DialogHeader>
+              <div className='space-y-4'>
+                <div className='text-center py-4'>
+                  <div className='w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4'>
+                    <div className='w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-lg font-bold'>
+                      !
+                    </div>
+                  </div>
+                  <p className='text-gray-600 mb-4'>
+                    This app requires the PeerAuth extension to be installed. Please install to continue.
+                  </p>
+                  <Button
+                    onClick={() => {
+                      window.open('https://chromewebstore.google.com/detail/peerauth-authenticate-and/ijpgccednehjpeclfcllnjjcmiohdjih', '_blank');
+                    }}
+                    className='w-full bg-blue-600 hover:bg-blue-700 text-white'
+                  >
+                    Install PeerAuth Extension
+                  </Button>
                 </div>
               </div>
             </DialogContent>

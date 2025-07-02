@@ -12,6 +12,10 @@ interface ExtensionProxyProofsValues {
   sideBarVersion: string | null;
   refetchExtensionVersion: () => void;
 
+  isConnectionApproved: boolean | null;
+  requestConnection: () => void;
+
+
   openNewTab: (actionType: string, platform: string) => void;
   openSidebar: (path: string) => void;
   platformMetadata: Record<string, MetadataInfo>;
@@ -25,16 +29,19 @@ interface ExtensionProxyProofsValues {
 const defaultValues: ExtensionProxyProofsValues = {
   isSidebarInstalled: false,
   sideBarVersion: null,
-  refetchExtensionVersion: () => {},
+  refetchExtensionVersion: () => { },
 
-  openNewTab: (_actionType: string, _platform: string) => {},
-  openSidebar: (_path: string) => {},
+  isConnectionApproved: null,
+  requestConnection: () => { },
+
+  openNewTab: (_actionType: string, _platform: string) => { },
+  openSidebar: (_path: string) => { },
   platformMetadata: {} as Record<string, MetadataInfo>,
 
   paymentProof: null,
-  generatePaymentProof: (_platform: string, _intentHash: string, _originalIndex: number, _proofIndex?: number) => {},
-  fetchPaymentProof: (_platform: string) => {},
-  resetProofState: () => {},
+  generatePaymentProof: (_platform: string, _intentHash: string, _originalIndex: number, _proofIndex?: number) => { },
+  fetchPaymentProof: (_platform: string) => { },
+  resetProofState: () => { },
 };
 
 const ExtensionProxyProofsContext = createContext<ExtensionProxyProofsValues>(defaultValues);

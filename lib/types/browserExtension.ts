@@ -9,6 +9,7 @@ export type ExtensionEventMessage = {
       notaryRequests: ExtensionNotaryProofRequest[];
       notaryRequest: ExtensionNotaryProofRequest;
     };
+    approved?: boolean;
     platform?: string;
   }
 };
@@ -64,6 +65,7 @@ export type ExtensionNotaryProofRequest = {
 
 export const ExtensionPostMessage = {
   OPEN_NEW_TAB: "open_new_tab",
+  REQUEST_CONNECTION: "request_connection",
   FETCH_EXTENSION_VERSION: "fetch_extension_version",
   FETCH_PROOF_BY_ID: "fetch_proof_by_id",
   GENERATE_PROOF: "generate_proof",
@@ -77,4 +79,5 @@ export const ExtensionReceiveMessage = {
   FETCH_PROOF_BY_ID_RESPONSE: "fetch_proof_by_id_response",
   FETCH_PROOF_REQUEST_ID_RESPONSE: "fetch_proof_request_id_response",
   FETCH_PROVIDER_BASE_URL_RESPONSE: 'fetch_provider_base_url_response',
+  CONNECTION_APPROVAL_RESPONSE: "connection_approval_response"
 };
