@@ -104,6 +104,7 @@ export default function SwapInterface() {
   const [userWrapperContract, setUserWrapperContract] = useState<string | null>(null);
   const [continuedIntent, setContinuedIntent] = useState<boolean>(false);
   const [showContinuingBanner, setShowContinuingBanner] = useState<boolean>(false);
+  const [isCancelingExistingIntent, setIsCancelingExistingIntent] = useState<boolean>(false);
 
   // Proof management state
   const [proofStatus, setProofStatus] = useState<
@@ -227,9 +228,55 @@ export default function SwapInterface() {
     }
   };
 
-  // Cancel existing intent handler (placeholder)
-  const handleCancelExistingIntent = () => {
-    console.log('cancel intent');
+  // Cancel existing intent handler
+  const handleCancelExistingIntent = async () => {
+    if (!user) return;
+
+    setIsCancelingExistingIntent(true);
+    setErrors({}); // Clear any existing errors
+
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch('/api/intents/cancel', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        // Success: show toast and exit modal
+        console.log('✅ Intent canceled successfully');
+        
+        // Show success notification
+        showBrowserNotification('Order Canceled', {
+          body: 'Your existing intent has been canceled successfully.',
+          icon: '/samba-logo.png',
+        });
+
+        // Clear continuation state and exit modal
+        setContinuedIntent(false);
+        setShowContinuingBanner(false);
+        setShowExecutionModal(false);
+        setExecutionStep(1);
+        setExecutionProgress(0);
+        setCurrentStep(1);
+        setOnrampIntentHash(null);
+
+        console.log('📋 Modal closed and state cleared after intent cancellation');
+      } else {
+        // Error: show error message
+        const errorData = await response.json();
+        console.error('❌ Failed to cancel intent:', errorData);
+        setErrors({ general: errorData.error || 'Failed to cancel intent' });
+      }
+    } catch (error: any) {
+      console.error('❌ Error canceling intent:', error);
+      setErrors({ general: 'Network error. Please try again.' });
+    } finally {
+      setIsCancelingExistingIntent(false);
+    }
   };
 
   const validateForm = () => {
@@ -961,26 +1008,6 @@ export default function SwapInterface() {
           </nav>
         </header>
 
-        {/* Continuing Intent Banner */}
-        {showContinuingBanner && (
-          <div className='container mx-auto px-4 py-2 max-w-2xl'>
-            <div className='bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between'>
-              <div className='flex items-center space-x-2'>
-                <div className='w-4 h-4 bg-blue-600 rounded-full'></div>
-                <span className='text-blue-800 font-medium'>Continuing with existing intent</span>
-              </div>
-              <Button
-                onClick={handleCancelExistingIntent}
-                variant='outline'
-                size='sm'
-                className='text-red-600 border-red-300 hover:bg-red-50'
-              >
-                Cancel Intent
-              </Button>
-            </div>
-          </div>
-        )}
-
         <div className='container mx-auto px-4 py-8 max-w-2xl'>
           {/* Progress Steps */}
           <div className='flex items-center justify-center mb-8'>
@@ -1289,6 +1316,45 @@ export default function SwapInterface() {
                   Executing Swap
                 </DialogTitle>
               </DialogHeader>
+
+              {/* Continuing Intent Banner */}
+              {showContinuingBanner && (
+                <div className='bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center justify-between'>
+                  <div className='flex items-center space-x-2'>
+                    <div className='w-3 h-3 bg-blue-600 rounded-full'></div>
+                    <span className='text-blue-800 font-medium text-sm'>Continuing with existing intent</span>
+                  </div>
+                  <Button
+                    onClick={handleCancelExistingIntent}
+                    disabled={isCancelingExistingIntent}
+                    variant='outline'
+                    size='sm'
+                    className='text-red-600 border-red-300 hover:bg-red-50 text-xs px-2 py-1 h-6 disabled:opacity-50'
+                  >
+                    {isCancelingExistingIntent ? (
+                      <div className='flex items-center space-x-1'>
+                        <div className='w-3 h-3 border border-red-600 border-t-transparent rounded-full animate-spin'></div>
+                        <span>Canceling...</span>
+                      </div>
+                    ) : (
+                      'Cancel Intent'
+                    )}
+                  </Button>
+                </div>
+              )}
+
+              {/* Error Display */}
+              {errors.general && (
+                <div className='bg-red-50 border border-red-200 rounded-lg p-3'>
+                  <div className='flex items-center space-x-2'>
+                    <div className='h-4 w-4 bg-red-600 rounded-full flex items-center justify-center text-white text-xs'>
+                      !
+                    </div>
+                    <span className='text-red-800 font-medium text-sm'>Error</span>
+                  </div>
+                  <p className='text-red-700 text-sm mt-1'>{errors.general}</p>
+                </div>
+              )}
 
               <div className='space-y-6'>
                 {/* Progress Bar */}

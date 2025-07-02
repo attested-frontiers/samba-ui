@@ -59,7 +59,6 @@ export function createBackendClients() {
  */
 export function createSambaContract(address: `0x${string}`) {
   const { publicClient, walletClient } = createBackendClients();
-
   return getContract({
     address,
     abi: WrapperArtifact.abi,
@@ -78,9 +77,12 @@ export async function executeContractTransaction<T extends any[]>(
 ): Promise<`0x${string}`> {
   try {
     console.log(`🔍 Simulating ${description}...`);
+    const { walletClient } = createBackendClients();
 
     // Simulate transaction first
-    const simulationResult = await contract.simulate[methodName](args);
+    const simulationResult = await contract.simulate[methodName](args, {
+      account: walletClient.account.address,
+    });
     console.log(`✅ ${description} simulation successful:`, simulationResult);
 
     // Execute the transaction
