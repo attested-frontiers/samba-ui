@@ -47,3 +47,44 @@ export const formatDecimalString = (decimalString: string, decimals: number = 6)
 
   return `${wholePart}.${formattedDecimal}`;
 };
+
+export function checkExtensionVersion(installedVersion: string): boolean {
+
+  const parseVersion = (version: string) => {
+    return version.split('.').map(num => parseInt(num, 10));
+  };
+
+  const expectedVersion = process.env.NEXT_PUBLIC_PEERAUTH_EXTENSION_VERSION!;
+
+  const expectedParts = parseVersion(expectedVersion);
+  const installedParts = parseVersion(installedVersion);
+  
+  // Ensure we have exactly 3 parts for each version
+  if (expectedParts.length !== 3 || installedParts.length !== 3) {
+    throw new Error('Version strings must be in x.y.z format');
+  }
+  
+  const [expX, expY, expZ] = expectedParts;
+  const [instX, instY, instZ] = installedParts;
+  
+  // Compare major version (x)
+  if (instX > expX) {
+    return true; // Higher major version is always acceptable
+  } else if (instX < expX) {
+    return false; // Lower major version is not acceptable
+  }
+  
+  // Major versions are equal, compare minor version (y)
+  if (instY > expY) {
+    return true; // Higher minor version is acceptable
+  } else if (instY < expY) {
+    return false; // Lower minor version is not acceptable
+  }
+  
+  // Major and minor versions are equal, compare patch version (z)
+  if (instZ >= expZ) {
+    return true; // Equal or higher patch version is acceptable
+  } else {
+    return false; // Lower patch version is not acceptable
+  }
+}

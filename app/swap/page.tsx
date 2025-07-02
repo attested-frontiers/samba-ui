@@ -32,7 +32,7 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { CheckCircle, Clock, ArrowRight } from 'lucide-react';
 import useExtensionProxyProofs from '@/hooks/useExtensionProxyProofs';
-import { formatDecimalString, platformToVerifier } from '@/lib/utils';
+import { formatDecimalString, platformToVerifier, checkExtensionVersion } from '@/lib/utils';
 import {
   PaymentPlatforms,
   QuoteRequest,
@@ -92,6 +92,7 @@ export default function SwapInterface() {
   const [paymentTriggerError, setPaymentTriggerError] = useState<string>('');
   const [submissionError, setSubmissionError] = useState<string>('');
   const [showConnectionModal, setShowConnectionModal] = useState(false);
+  const [showVersionModal, setShowVersionModal] = useState(false);
 
   // Proof management state
   const [proofStatus, setProofStatus] = useState<
@@ -730,6 +731,16 @@ export default function SwapInterface() {
       setShowConnectionModal(false);
     }
   }, [isConnectionApproved, requestConnection]);
+
+  // Handle extension version compatibility
+  useEffect(() => {
+    if (isSidebarInstalled && sideBarVersion) {
+      const isCompatible = checkExtensionVersion(sideBarVersion);
+      if (!isCompatible) {
+        setShowVersionModal(true);
+      }
+    }
+  }, [isSidebarInstalled, sideBarVersion]);
 
   const renderPaymentStatus = () => {
     return isPaymentFound ? 'Found payment' : 'Not found payment';
@@ -1460,6 +1471,32 @@ export default function SwapInterface() {
                   >
                     Connect PeerAuth
                   </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Version Incompatibility Modal */}
+          <Dialog open={showVersionModal} onOpenChange={setShowVersionModal}>
+            <DialogContent className='sm:max-w-md'>
+              <DialogHeader>
+                <DialogTitle className='text-center text-amber-600'>
+                  PeerAuth Version Incompatible
+                </DialogTitle>
+              </DialogHeader>
+              <div className='space-y-4'>
+                <div className='text-center py-4'>
+                  <div className='w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4'>
+                    <div className='w-8 h-8 bg-amber-600 rounded-full flex items-center justify-center text-white text-lg font-bold'>
+                      !
+                    </div>
+                  </div>
+                  <p className='text-gray-600 mb-2'>
+                    Your current PeerAuth version is <strong>{sideBarVersion}</strong>.
+                  </p>
+                  <p className='text-gray-600'>
+                    Please update your PeerAuth extension to the latest version.
+                  </p>
                 </div>
               </div>
             </DialogContent>
