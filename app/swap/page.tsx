@@ -64,7 +64,10 @@ const paymentMethods = [
 
 export default function SwapInterface() {
   const { user, loading, signOut } = useAuth();
-  
+  // const { address } = useAccount();
+  // const { samba } = useContSracts();
+  // const { disconnect } = useDisconnect();
+
   // Temporary placeholder values for web3 functionality
   const [currentStep, setCurrentStep] = useState(1);
   const [proofIndex, setProofIndex] = useState<number | null>(null);
@@ -301,10 +304,12 @@ export default function SwapInterface() {
       user: '0x1234567890123456789012345678901234567890' as `0x${string}`, // Placeholder address
     };
     let data: QuoteResponse;
+    const token = await user?.getIdToken();
     try {
       const response = await fetch('/api/deposits/quote', {
         method: 'POST',
         headers: {
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(request),
@@ -316,7 +321,6 @@ export default function SwapInterface() {
         throw new Error(errorData.error || 'Failed to prepare swap');
       }
       data = (await response.json()) as QuoteResponse;
-      console.log('QUOTE DATA: ', data);
       setDepositTarget(data);
       if (fromMethod === 'venmo') {
         setOnrampRecipient(data.details.depositData.venmoUsername!);
@@ -420,10 +424,10 @@ export default function SwapInterface() {
       setExecutionProgress(80);
     } catch (error: any) {
       console.error('fulfillAndOnramp failed', error);
-      
+
       // Handle different error types from API
       let errorMessage = 'Payment submission failed. Please try again.';
-      
+
       if (error.message?.includes('Missing or invalid authorization')) {
         errorMessage = 'Authentication failed. Please sign in again.';
       } else if (error.message?.includes('Missing required fields')) {
@@ -441,7 +445,7 @@ export default function SwapInterface() {
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
+
       setSubmissionError(errorMessage);
       setIsProcessing(false);
     }
@@ -456,7 +460,6 @@ export default function SwapInterface() {
     setProofStatus('idle');
     setProofIndex(null);
   };
-
 
   // todo: this actually should open payment link byt being coopted
   // to signal intent
@@ -489,10 +492,10 @@ export default function SwapInterface() {
       handlePaymentTriggerSuccess();
     } catch (error: any) {
       console.error('Payment trigger failed:', error);
-      
+
       // Handle different error types from API
       let errorMessage = 'Unknown error occurred';
-      
+
       if (error.message?.includes('Missing or invalid authorization')) {
         errorMessage = 'Authentication failed. Please sign in again.';
         setProofStatus('error');
@@ -503,7 +506,8 @@ export default function SwapInterface() {
         errorMessage = 'Blockchain transaction failed. Please try again.';
         setProofStatus('error');
       } else if (error.message?.includes('Account has unfulfilled intent')) {
-        errorMessage = 'Payment intent already exists. Please cancel existing intent.';
+        errorMessage =
+          'Payment intent already exists. Please cancel existing intent.';
         setProofStatus('error_intent');
       } else if (error.message?.includes('Insufficient funds')) {
         errorMessage = 'Insufficient funds for transaction.';
@@ -517,7 +521,7 @@ export default function SwapInterface() {
       } else {
         setProofStatus('error');
       }
-      
+
       handlePaymentTriggerError(errorMessage);
     }
   };
@@ -775,9 +779,9 @@ export default function SwapInterface() {
                 <User className='h-4 w-4' />
                 <span>{user?.email || 'user@example.com'}</span>
               </div>
-              <Button 
-                variant='outline' 
-                size='sm' 
+              <Button
+                variant='outline'
+                size='sm'
                 onClick={() => signOut()}
                 disabled={loading}
               >
