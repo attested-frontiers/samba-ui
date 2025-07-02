@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest, AuthenticationError, createAuthErrorResponse } from '@/lib/auth-middleware';
-import {
-  createSambaContract,
-  executeContractTransaction,
-  waitForTransactionReceipt
+import { 
+  createSambaContract, 
+  executeContractTransaction, 
+  waitForTransactionReceipt 
 } from '@/lib/contract-client';
 import {
   calculateConvertedAmount,
-  getWrapperContractByEmail,
   handleContractError
 } from '@/lib/contract-utils';
 import { currencyKeccak256 } from '@/lib/chain';
@@ -15,9 +14,9 @@ import { getMarketMakerMetadataPayload, platformToVerifier } from '@/lib/utils';
 import { parseExtensionProof, encodeProofAsBytes } from '@/lib/types';
 import { parseUnits } from 'viem';
 import { ethers } from 'ethers';
-import {
-  PaymentPlatforms,
-  ZKP2PCurrencies
+import { 
+  PaymentPlatforms, 
+  ZKP2PCurrencies 
 } from '@/lib/types/intents';
 import { Proof } from '@/lib/types';
 
@@ -46,14 +45,14 @@ export async function POST(request: NextRequest): Promise<NextResponse<FulfillAn
 
     // 2. Parse and validate request body
     const body: FulfillAndOnrampRequest = await request.json();
-    const {
-      amount,
-      conversionRate,
-      intentHash,
-      onrampProof,
-      currency,
-      destinationUsername,
-      destinationPlatform
+    const { 
+      amount, 
+      conversionRate, 
+      intentHash, 
+      onrampProof, 
+      currency, 
+      destinationUsername, 
+      destinationPlatform 
     } = body;
 
     if (!amount || !conversionRate || !intentHash || !onrampProof || !currency || !destinationUsername || !destinationPlatform) {
@@ -75,15 +74,15 @@ export async function POST(request: NextRequest): Promise<NextResponse<FulfillAn
 
     // 3. Prepare fulfill and onramp parameters
     console.log(`🔧 Preparing fulfill and onramp parameters...`);
-
+    
     // Get the payee details hash from ZKP2P API
     const marketMakerMetadataPayload = getMarketMakerMetadataPayload(
       destinationUsername,
       destinationPlatform
     );
-
+    
     console.log("Validating market maker with ZKP2P:", marketMakerMetadataPayload);
-
+    
     const API_URL_BASE = process.env.ZKP2P_API_URL || 'https://api.zkp2p.xyz/v1';
     const API_URL = `${API_URL_BASE}/makers/create`;
     const ZKP2P_API_KEY = process.env.ZKP2P_API_KEY;
@@ -171,8 +170,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<FulfillAn
     console.log(`🎯 Executing fulfill and offramp for intent: ${intentHash}`);
 
     // 5. Execute fulfill and offramp transaction
-    const wrapperContractAddress = await getWrapperContractByEmail(user.email || '');
-    const contract = createSambaContract(wrapperContractAddress as `0x${string}` || '0x');
+    const contract = createSambaContract();
     const txHash = await executeContractTransaction(
       contract,
       'fulfillAndOfframp',
@@ -183,7 +181,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<FulfillAn
     // 6. Wait for transaction confirmation
     console.log(`⏳ Waiting for transaction confirmation...`);
     const { receipt } = await waitForTransactionReceipt(txHash);
-
+    
     console.log(`🎉 Fulfill and offramp completed successfully!`);
     console.log(`📋 Transaction confirmed in block: ${receipt.blockNumber}`);
 
@@ -195,13 +193,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<FulfillAn
 
   } catch (error: any) {
     console.error('❌ Fulfill and onramp failed:', error);
-
+    
     // Handle authentication errors specifically
     if (error instanceof AuthenticationError) {
       const authError = createAuthErrorResponse(error);
       return NextResponse.json(authError, { status: authError.statusCode });
     }
-
+    
     // Special handling for detailed contract errors
     if (error.name === 'ContractFunctionRevertedError') {
       console.error('🚨 Contract reverted details:');
@@ -209,15 +207,15 @@ export async function POST(request: NextRequest): Promise<NextResponse<FulfillAn
       console.error('Short message:', error.shortMessage);
       console.error('Error data:', error.data);
     }
-
+    
     if (error.details) {
       console.error('Error details:', error.details);
     }
-
+    
     if (error.cause) {
       console.error('Error cause:', error.cause);
     }
-
+    
     // Log full error for debugging
     try {
       console.error('Full error object:', JSON.stringify(error, (key, value) => {
@@ -232,13 +230,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<FulfillAn
     } catch (e) {
       console.error('Could not stringify error object');
     }
-
+    
     const errorMessage = handleContractError(error);
-
+    
     return NextResponse.json(
-      {
-        success: false,
-        error: errorMessage
+      { 
+        success: false, 
+        error: errorMessage 
       },
       { status: 500 }
     );
@@ -251,12 +249,12 @@ export async function GET(request: NextRequest) {
     message: 'Fulfill and Onramp API endpoint',
     description: 'POST to fulfill an intent and execute onramp on the Samba contract',
     requiredFields: [
-      'amount',
-      'conversionRate',
-      'intentHash',
-      'onrampProof',
-      'currency',
-      'destinationUsername',
+      'amount', 
+      'conversionRate', 
+      'intentHash', 
+      'onrampProof', 
+      'currency', 
+      'destinationUsername', 
       'destinationPlatform'
     ],
     authentication: 'Bearer token required',

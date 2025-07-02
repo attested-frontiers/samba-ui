@@ -1,23 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest, AuthenticationError, createAuthErrorResponse } from '@/lib/auth-middleware';
-import {
-  createSambaContract,
-  executeContractTransaction,
-  waitForTransactionReceipt
+import { 
+  createSambaContract, 
+  executeContractTransaction, 
+  waitForTransactionReceipt 
 } from '@/lib/contract-client';
 import {
   prepareSignalIntentPayload,
   calculateConvertedAmount,
-  handleContractError,
-  getWrapperContractByEmail
+  handleContractError
 } from '@/lib/contract-utils';
 import { currencyKeccak256 } from '@/lib/chain';
 import { platformToVerifier } from '@/lib/utils';
 import { parseUnits } from 'viem';
-import {
-  QuoteResponse,
-  PaymentPlatforms,
-  ZKP2PCurrencies
+import { 
+  QuoteResponse, 
+  PaymentPlatforms, 
+  ZKP2PCurrencies 
 } from '@/lib/types/intents';
 
 interface SignalIntentRequest {
@@ -65,7 +64,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<SignalInt
 
     // 4. Get gating service signature from ZKP2P API
     console.log(`🔑 Getting gating service signature...`);
-
+    
     const API_URL_BASE = process.env.ZKP2P_API_URL || 'https://api.zkp2p.xyz/v1';
     const API_URL = `${API_URL_BASE}/verify/intent`;
     const ZKP2P_API_KEY = process.env.ZKP2P_API_KEY;
@@ -119,8 +118,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<SignalInt
     });
 
     // 6. Execute signal intent transaction
-    const wrapperContractAddress = await getWrapperContractByEmail(user.email || '');
-    const contract = createSambaContract(wrapperContractAddress as `0x${string}` || '0x');
+    const contract = createSambaContract();
     const txHash = await executeContractTransaction(
       contract,
       'signalIntent',
@@ -130,7 +128,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<SignalInt
 
     // 7. Wait for transaction confirmation and get intent hash
     const { receipt, eventLogs } = await waitForTransactionReceipt(txHash, 'IntentSignaled');
-
+    
     if (!eventLogs || eventLogs.length === 0) {
       throw new Error('IntentSignaled event not found in transaction receipt');
     }
@@ -146,19 +144,19 @@ export async function POST(request: NextRequest): Promise<NextResponse<SignalInt
 
   } catch (error: any) {
     console.error('❌ Signal intent failed:', error);
-
+    
     // Handle authentication errors specifically
     if (error instanceof AuthenticationError) {
       const authError = createAuthErrorResponse(error);
       return NextResponse.json(authError, { status: authError.statusCode });
     }
-
+    
     const errorMessage = handleContractError(error);
-
+    
     return NextResponse.json(
-      {
-        success: false,
-        error: errorMessage
+      { 
+        success: false, 
+        error: errorMessage 
       },
       { status: 500 }
     );
