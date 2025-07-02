@@ -966,7 +966,14 @@ export default function SwapInterface() {
   // Handle extension installation check
   useEffect(() => {
     if (isSidebarInstalled === false) {
-      setShowInstallModal(true);
+      // Add 5 second delay before showing the modal
+      const timer = setTimeout(() => {
+        setShowInstallModal(true);
+      }, 5000);
+      return () => clearTimeout(timer);
+    } else if (isSidebarInstalled === true) {
+      // Hide modal when extension is detected
+      setShowInstallModal(false);
     }
   }, [isSidebarInstalled]);
 
