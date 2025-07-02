@@ -101,6 +101,7 @@ export default function SwapInterface() {
   const [showVersionModal, setShowVersionModal] = useState(false);
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [depositId, setDepositId] = useState<string | null>(null);
+  const [userWrapperContract, setUserWrapperContract] = useState<string | null>(null);
 
   // Proof management state
   const [proofStatus, setProofStatus] = useState<
@@ -163,6 +164,34 @@ export default function SwapInterface() {
       if (permission === 'granted') {
         new Notification(title, options);
       }
+    }
+  };
+
+  // Contract management utility
+  const ensureWrapperContract = async (): Promise<string | null> => {
+    if (!user) return null;
+    
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch('/api/contract/wrapper', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.wrapperContract;
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to ensure wrapper contract:', errorData);
+        return null;
+      }
+    } catch (error) {
+      console.error('Error ensuring wrapper contract:', error);
+      return null;
     }
   };
 
@@ -314,35 +343,59 @@ export default function SwapInterface() {
 
   const handleReviewTransaction = async () => {
     setIsGettingQuote(true);
-    const request: QuoteRequest = {
-      paymentPlatform: fromMethod as PaymentPlatforms,
-      amount: parseUnits(amount, 6).toString(),
-      fiatCurrency: fromCurrency as ZKP2PCurrencies,
-      user: '0x1234567890123456789012345678901234567890' as `0x${string}`, // Placeholder address
-    };
-    let data: QuoteResponse;
-    const token = await user?.getIdToken();
-    try {
-      const response = await fetch('/api/deposits/quote', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(request),
-      });
+    
+    // Ensure we have both the quote and the contract
+    const [quoteData, contractAddress] = await Promise.all([
+      // Get quote
+      (async () => {
+        const request: QuoteRequest = {
+          paymentPlatform: fromMethod as PaymentPlatforms,
+          amount: parseUnits(amount, 6).toString(),
+          fiatCurrency: fromCurrency as ZKP2PCurrencies,
+          user: '0x1234567890123456789012345678901234567890' as `0x${string}`, // Placeholder address
+        };
+        const token = await user?.getIdToken();
+        const response = await fetch('/api/deposits/quote', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(request),
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Error preparing swap:', errorData);
-        throw new Error(errorData.error || 'Failed to prepare swap');
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Error preparing swap:', errorData);
+          throw new Error(errorData.error || 'Failed to prepare swap');
+        }
+        return (await response.json()) as QuoteResponse;
+      })(),
+      // Ensure contract exists
+      (async () => {
+        if (userWrapperContract) {
+          return userWrapperContract;
+        }
+        // If contract is still null, try to get it
+        const contract = await ensureWrapperContract();
+        if (contract) {
+          setUserWrapperContract(contract);
+          console.log('✅ User wrapper contract set during quote:', contract);
+        }
+        return contract;
+      })()
+    ]);
+
+    try {
+      if (!contractAddress) {
+        throw new Error('Failed to ensure wrapper contract exists');
       }
-      data = (await response.json()) as QuoteResponse;
-      setDepositTarget(data);
+
+      setDepositTarget(quoteData);
       if (fromMethod === 'venmo') {
-        setOnrampRecipient(data.details.depositData.venmoUsername!);
+        setOnrampRecipient(quoteData.details.depositData.venmoUsername!);
       } else if (fromMethod === 'revolut') {
-        setOnrampRecipient(data.details.depositData.revolutUsername!);
+        setOnrampRecipient(quoteData.details.depositData.revolutUsername!);
       }
     } catch (error) {
       console.error('Error preparing swap:', error);
@@ -595,6 +648,22 @@ export default function SwapInterface() {
     }
     return null;
   };
+
+  // Auto-check contract when user is available and contract is null
+  useEffect(() => {
+    const checkContract = async () => {
+      if (user && userWrapperContract === null) {
+        console.log('🔍 Checking wrapper contract for user...');
+        const contract = await ensureWrapperContract();
+        if (contract) {
+          setUserWrapperContract(contract);
+          console.log('✅ User wrapper contract set:', contract);
+        }
+      }
+    };
+
+    checkContract();
+  }, [user, userWrapperContract]);
 
   useEffect(() => {
     const checkPaymentMatch = (): boolean => {

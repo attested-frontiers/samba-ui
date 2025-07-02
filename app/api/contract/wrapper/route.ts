@@ -11,50 +11,24 @@ const COLLECTION_NAME = 'user';
 
 const { NEXT_PUBLIC_ZKP2P_CONTRACT, NEXT_PUBLIC_USDC_CONTRACT, NEXT_PUBLIC_ADMIN_PUBKEY } = process.env;
 
-export async function GET(request: NextRequest) {
-    try {
-        const user = await authenticateRequest(request);
-        console.log(`🔐 Authenticated user: ${user.email}`);
-
-        try {
-
-            // Find user by email
-            const wrapperContract = await getWrapperContractByEmail(user.email || '');
-
-            if (wrapperContract) {
-                return NextResponse.json({
-                    wrapperContract
-                });
-            } else {
-                return NextResponse.json({
-                    message: 'No contract found'
-                });
-            }
-
-        } catch (error) {
-            console.error('Error checking contract address:', error);
-        }
-
-    } catch (error) {
-        console.error('Error checking contract address:', error);
-
-        // Handle authentication errors specifically
-        if (error instanceof AuthenticationError) {
-            const authError = createAuthErrorResponse(error);
-            return NextResponse.json(authError, { status: authError.statusCode });
-        }
-
-        return NextResponse.json(
-            { error: 'Internal server error' },
-            { status: 500 }
-        );
-    }
-}
 
 export async function POST(request: NextRequest) {
     try {
         const user = await authenticateRequest(request);
         console.log(`🔐 Authenticated user: ${user.email}`);
+
+        // Step 1: Check if a contract exists for the user
+        const existingWrapperContract = await getWrapperContractByEmail(user.email || '');
+
+        if (existingWrapperContract) {
+            console.log(`✅ Existing wrapper contract found: ${existingWrapperContract}`);
+            return NextResponse.json({
+                wrapperContract: existingWrapperContract
+            });
+        }
+
+        // Step 2: Deploy contract if it doesn't exist
+        console.log(`🚀 No existing contract found. Deploying new wrapper contract for user: ${user.email}`);
 
         // Connect to MongoDB
         const client = new MongoClient(MONGODB_URI);
@@ -63,9 +37,6 @@ export async function POST(request: NextRequest) {
             await client.connect();
             const db = client.db(DB_NAME);
             const collection = db.collection(COLLECTION_NAME);
-
-            // Deploy new wrapper contract instance
-            console.log(`🚀 Deploying new wrapper contract for user: ${user.email}`);
 
             // Create contract factory
             const { publicClient, walletClient } = createBackendClients();
@@ -83,7 +54,7 @@ export async function POST(request: NextRequest) {
 
             console.log(`✅ Wrapper contract deployed at: ${wrapperContract}`);
 
-            // Save to database
+            // Step 3: Save to database
             await collection.updateOne(
                 { email: user.email },
                 {
@@ -99,19 +70,19 @@ export async function POST(request: NextRequest) {
                 { upsert: true }
             );
 
-            console.log(`💾 Wrapper contract saved to database for user: ${user.email} `);
+            console.log(`💾 Wrapper contract saved to database for user: ${user.email}`);
 
+            // Step 4: Return the contract address
             return NextResponse.json({
-                message: 'Wrapper contract deployed and saved successfully',
                 wrapperContract
-            });
+            }, { status: 201 });
 
         } finally {
             await client.close();
         }
 
     } catch (error) {
-        console.error('Error saving contract address:', error);
+        console.error('Error with contract deployment:', error);
 
         if (error instanceof AuthenticationError) {
             const authError = createAuthErrorResponse(error);
