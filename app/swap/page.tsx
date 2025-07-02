@@ -100,6 +100,7 @@ export default function SwapInterface() {
   const [showConnectionModal, setShowConnectionModal] = useState(false);
   const [showVersionModal, setShowVersionModal] = useState(false);
   const [showInstallModal, setShowInstallModal] = useState(false);
+  const [depositId, setDepositId] = useState<string | null>(null);
 
   // Proof management state
   const [proofStatus, setProofStatus] = useState<
@@ -427,7 +428,7 @@ export default function SwapInterface() {
       return;
     }
     try {
-      await fulfillAndOnramp(
+      const returnedDepositId = await fulfillAndOnramp(
         amount,
         depositTarget!.intent.conversionRate,
         onrampIntentHash as `0x${string}`,
@@ -436,6 +437,7 @@ export default function SwapInterface() {
         offrampRecipient,
         toMethod as PaymentPlatforms
       );
+      setDepositId(returnedDepositId);
       setExecutionStep(5);
       setExecutionProgress(80);
     } catch (error: any) {
@@ -1425,12 +1427,22 @@ export default function SwapInterface() {
                           </strong>{' '}
                           account.
                         </p>
-                        <Button
-                          onClick={handleCloseModal}
-                          className='w-full bg-green-600 hover:bg-green-700'
-                        >
-                          Close
-                        </Button>
+                        <div className='space-y-2'>
+                          {depositId && (
+                            <Button
+                              onClick={() => window.open(`https://zkp2p.xyz/deposit/${depositId}`, '_blank')}
+                              className='w-full bg-blue-600 hover:bg-blue-700 text-white'
+                            >
+                              View Deposit on ZKP2P
+                            </Button>
+                          )}
+                          <Button
+                            onClick={handleCloseModal}
+                            className='w-full bg-green-600 hover:bg-green-700'
+                          >
+                            Close
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   )}
