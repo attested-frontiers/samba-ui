@@ -557,7 +557,9 @@ export default function SwapInterface() {
         depositTarget,
         amount,
         verifierAddress,
-        currency
+        currency,
+        offrampRecipient,
+        fromMethod as PaymentPlatforms
       );
       setOnrampIntentHash(intentHash);
       handlePaymentTriggerSuccess();

@@ -11,11 +11,18 @@ import { Proof } from './types';
  * These functions replace the SambaContext functions
  */
 
+interface IntentMetadata {
+  recipient: string;
+  amount: string;
+  platform: PaymentPlatforms;
+}
+
 interface SignalIntentRequest {
   quote: QuoteResponse;
   amount: string;
   verifier: `0x${string}`;
   currency: ZKP2PCurrencies;
+  metadata: IntentMetadata;
 }
 
 interface SignalIntentResponse {
@@ -51,13 +58,20 @@ export async function signalIntent(
   quote: QuoteResponse,
   amount: string,
   verifier: `0x${string}`,
-  currency: ZKP2PCurrencies
+  currency: ZKP2PCurrencies,
+  recipient: string,
+  platform: PaymentPlatforms
 ): Promise<string> {
   const requestBody: SignalIntentRequest = {
     quote,
     amount,
     verifier,
     currency,
+    metadata: {
+      recipient,
+      amount,
+      platform,
+    },
   };
 
   const response = await makeAuthenticatedRequest('/api/contract/signal', {
