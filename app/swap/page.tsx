@@ -250,10 +250,10 @@ export default function SwapInterface() {
         console.log('✅ Intent canceled successfully');
         
         // Show success notification
-        showBrowserNotification('Transfer Canceled', {
-          body: 'Your existing transfer has been canceled successfully.',
-          icon: '/samba-logo.png',
-        });
+        // showBrowserNotification('Transfer Canceled', {
+        //   body: 'Your existing transfer has been canceled successfully.',
+        //   icon: '/samba-logo.png',
+        // });
 
         // Clear continuation state and exit modal
         setContinuedIntent(false);
@@ -940,6 +940,22 @@ export default function SwapInterface() {
     }
   }, [proofStatus, intervalId]);
 
+  // Auto-trigger payment when modal opens to Step 1
+  useEffect(() => {
+    if (showExecutionModal && executionStep === 1 && !continuedIntent && proofStatus === 'idle') {
+      console.log('🚀 Auto-triggering payment on modal open');
+      handleTriggerPayment();
+    }
+  }, [showExecutionModal, executionStep, continuedIntent, proofStatus]);
+
+  // Auto-finalize order when reaching Step 4
+  useEffect(() => {
+    if (executionStep === 4 && !isProcessing && !submissionError && onrampIntentHash && paymentProof) {
+      console.log('🚀 Auto-finalizing order on Step 4');
+      handleFinalizeOrder();
+    }
+  }, [executionStep, isProcessing, submissionError, onrampIntentHash, paymentProof]);
+
   // Handle connection approval state changes
   useEffect(() => {
     console.log('Connection approval state changed:', isConnectionApproved);
@@ -1370,64 +1386,37 @@ export default function SwapInterface() {
                   {executionStep === 1 && (
                     <div className='space-y-4'>
                       <div className='w-16 h-16 bg-secondary/20 rounded-full flex items-center justify-center mx-auto'>
-                        <ArrowRight className='h-8 w-8 text-secondary' />
+                        {proofStatus === 'generating' ? (
+                          <Clock className='h-8 w-8 text-secondary animate-spin' />
+                        ) : (
+                          <ArrowRight className='h-8 w-8 text-secondary' />
+                        )}
                       </div>
                       <div>
                         <h3 className='text-lg font-semibold mb-2'>
                           Trigger Payment
                         </h3>
                         <p className='text-sm text-gray-600 mb-3 leading-relaxed'>
-                          Click the button below to initiate the payment process
-                          and generate the necessary intent hash for your
-                          transaction.
+                          {proofStatus === 'generating' 
+                            ? 'Initiating payment process and generating intent hash...'
+                            : 'Automatically triggering payment process to generate the necessary intent hash for your transaction.'
+                          }
                         </p>
 
-                        {/* Payment Trigger Button with Tooltip */}
+                        {/* Auto-trigger status display */}
                         <div className='space-y-3'>
-                          <div className='flex items-center justify-center space-x-2'>
-                            <Button
-                              onClick={handleTriggerPayment}
-                              disabled={proofStatus === 'generating'}
-                              className='w-full bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white'
-                            >
-                              {proofStatus === 'generating'
-                                ? 'Triggering...'
-                                : 'Trigger Payment'}
-                            </Button>
-                            <Tooltip delayDuration={300}>
-                              <TooltipTrigger asChild>
-                                <button className='w-6 h-6 bg-secondary/20 hover:bg-secondary/30 rounded-full flex items-center justify-center transition-colors aspect-square'>
-                                  <span className='text-secondary text-xs font-medium'>
-                                    i
+                          {proofStatus === 'generating' && (
+                            <div className='flex items-center justify-center space-x-2'>
+                              <div className='w-full bg-secondary/10 rounded-lg p-3'>
+                                <div className='flex items-center space-x-2'>
+                                  <Clock className='h-4 w-4 text-secondary animate-spin' />
+                                  <span className='text-secondary font-medium text-sm'>
+                                    Finalizing Order...
                                   </span>
-                                </button>
-                              </TooltipTrigger>
-                              <TooltipContent side='top' className='max-w-xs'>
-                                <p className='text-sm'>
-                                  This action will signal your intent to make a
-                                  payment and generate a unique hash that will
-                                  be used to verify your transaction on the
-                                  blockchain. This is the first step in the
-                                  secure payment process.
-                                </p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </div>
-
-                          {/* Skip Trigger Button
-                          <div className='flex justify-end'>
-                            <Button
-                              onClick={() => {
-                                setExecutionStep(2);
-                                setExecutionProgress(10);
-                              }}
-                              variant='outline'
-                              size='sm'
-                              className='text-red-600 border-red-300 hover:bg-red-50 text-xs px-3 py-0.5 h-6 rounded-full'
-                            >
-                              Skip Trigger
-                            </Button>
-                          </div> */}
+                                </div>
+                              </div>
+                            </div>
+                          )}
 
                           {/* Error Message */}
                           {proofStatus.includes('error') && (
@@ -1443,8 +1432,16 @@ export default function SwapInterface() {
                               <p className='text-red-700 text-xs mt-1 text-center'>
                                 {paymentTriggerError}
                               </p>
-                              {proofStatus === 'error_intent' && (
-                                <div className='flex justify-center mt-2'>
+                              <div className='flex justify-center mt-2 space-x-2'>
+                                <Button
+                                  onClick={handleTriggerPayment}
+                                  variant='outline'
+                                  size='sm'
+                                  className='text-green-700 border-green-300 hover:bg-green-50 text-xs px-2 py-0.5 h-6'
+                                >
+                                  Retry
+                                </Button>
+                                {proofStatus === 'error_intent' && (
                                   <Button
                                     onClick={cancelIntent}
                                     disabled={isCancelingIntent}
@@ -1456,8 +1453,8 @@ export default function SwapInterface() {
                                       ? 'Canceling...'
                                       : 'Cancel Intent'}
                                   </Button>
-                                </div>
-                              )}
+                                )}
+                              </div>
                             </div>
                           )}
 
@@ -1471,8 +1468,7 @@ export default function SwapInterface() {
                                 </span>
                               </div>
                               <p className='text-green-700 text-sm mt-1'>
-                                Intent hash generated. You can now proceed to
-                                send your payment.
+                                Intent hash generated. Advancing to payment step...
                               </p>
                             </div>
                           )}
@@ -1612,41 +1608,69 @@ export default function SwapInterface() {
                   {executionStep === 4 && (
                     <div className='space-y-4'>
                       <div className='w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto'>
-                        <CheckCircle className='h-8 w-8 text-primary' />
+                        {isProcessing ? (
+                          <Clock className='h-8 w-8 text-primary animate-spin' />
+                        ) : (
+                          <CheckCircle className='h-8 w-8 text-primary' />
+                        )}
                       </div>
                       <div>
                         <h3 className='text-lg font-semibold mb-2'>
                           Finalize Order
                         </h3>
                         <p className='text-sm text-gray-600 mb-3 leading-relaxed'>
-                          Finalize remittance from {fromMethod} to{' '}
-                          {offrampRecipient} on {toMethod} for {amount}
+                          {isProcessing 
+                            ? 'Finalizing remittance and completing blockchain transaction...'
+                            : `Automatically finalizing remittance from ${fromMethod} to ${offrampRecipient} on ${toMethod} for ${amount}`
+                          }
                         </p>
 
-                        {/* Error Message */}
-                        {submissionError && (
-                          <div className='bg-red-50 border border-red-200 rounded-lg p-3 mb-3'>
-                            <div className='flex items-center space-x-2'>
-                              <div className='h-4 w-4 bg-red-600 rounded-full flex items-center justify-center text-white text-xs'>
-                                !
+                        {/* Auto-finalization status display */}
+                        <div className='space-y-3'>
+                          {isProcessing && (
+                            <div className='bg-primary/10 rounded-lg p-3'>
+                              <div className='flex items-center space-x-2'>
+                                <Clock className='h-4 w-4 text-primary animate-spin' />
+                                <span className='text-primary font-medium text-sm'>
+                                  Finalizing Order...
+                                </span>
                               </div>
-                              <span className='font-medium text-sm text-red-800'>
-                                Submission Failed
-                              </span>
+                              <p className='text-xs text-primary mt-1'>
+                                Submitting payment proof and completing transaction...
+                              </p>
                             </div>
-                            <p className='text-red-700 text-sm mt-1'>
-                              {submissionError}
-                            </p>
-                          </div>
-                        )}
+                          )}
 
-                        <Button
-                          onClick={handleFinalizeOrder}
-                          disabled={isProcessing}
-                          className='w-full'
-                        >
-                          {isProcessing ? 'Submitting...' : 'Submit'}
-                        </Button>
+                          {/* Error Message */}
+                          {submissionError && (
+                            <div className='bg-red-50 border border-red-200 rounded-lg p-3'>
+                              <div className='flex items-center space-x-2'>
+                                <div className='h-4 w-4 bg-red-600 rounded-full flex items-center justify-center text-white text-xs'>
+                                  !
+                                </div>
+                                <span className='font-medium text-sm text-red-800'>
+                                  Finalization Failed
+                                </span>
+                              </div>
+                              <p className='text-red-700 text-sm mt-1'>
+                                {submissionError}
+                              </p>
+                              <div className='flex justify-center mt-2'>
+                                <Button
+                                  onClick={() => {
+                                    setSubmissionError('');
+                                    handleFinalizeOrder();
+                                  }}
+                                  variant='outline'
+                                  size='sm'
+                                  className='text-green-700 border-green-300 hover:bg-green-50 text-xs px-2 py-0.5 h-6'
+                                >
+                                  Retry
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
