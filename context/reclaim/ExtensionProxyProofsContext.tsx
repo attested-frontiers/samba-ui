@@ -15,7 +15,6 @@ interface ExtensionProxyProofsValues {
   isConnectionApproved: boolean | null;
   requestConnection: () => void;
 
-
   openNewTab: (actionType: string, platform: string) => void;
   openSidebar: (path: string) => void;
   platformMetadata: Record<string, MetadataInfo>;

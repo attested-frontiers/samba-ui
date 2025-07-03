@@ -11,6 +11,8 @@ interface AuthContextType {
   signIn: () => Promise<User | null>;
   signOut: () => Promise<void>;
   clearError: () => void;
+  isCheckingContract: boolean;
+  isDeployingContract: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,6 +33,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isCheckingContract, setIsCheckingContract] = useState(false);
+  const [isDeployingContract, setIsDeployingContract] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -95,6 +99,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     signIn,
     signOut,
     clearError,
+    isCheckingContract,
+    isDeployingContract,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -687,6 +687,7 @@ export default function SwapInterface() {
 
   const handleTriggerProof = () => {
     // determine action
+    console.log("attempting to open tab")
     let proofAction = {
       platform: '',
       action: '',
@@ -966,7 +967,14 @@ export default function SwapInterface() {
   // Handle extension installation check
   useEffect(() => {
     if (isSidebarInstalled === false) {
-      setShowInstallModal(true);
+      // Add 5 second delay before showing the modal
+      const timer = setTimeout(() => {
+        setShowInstallModal(true);
+      }, 5000);
+      return () => clearTimeout(timer);
+    } else if (isSidebarInstalled === true) {
+      // Hide modal when extension is detected
+      setShowInstallModal(false);
     }
   }, [isSidebarInstalled]);
 
@@ -1586,6 +1594,13 @@ export default function SwapInterface() {
                                   {onrampRecipient} of value ${amount}. Please
                                   make the payment and try again.
                                 </p>
+                                <Button
+                                  onClick={handleTriggerProof}
+                                  className='mt-2 text-xs px-3 py-1 h-auto bg-red-600 hover:bg-red-700 text-white'
+                                  size='sm'
+                                >
+                                  Retry
+                                </Button>
                               </div>
                             )}
                           </div>
