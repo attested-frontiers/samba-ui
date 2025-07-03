@@ -1411,28 +1411,10 @@ export default function SwapInterface() {
                                 <div className='flex items-center space-x-2'>
                                   <Clock className='h-4 w-4 text-secondary animate-spin' />
                                   <span className='text-secondary font-medium text-sm'>
-                                    Triggering Payment...
+                                    Finalizing Order...
                                   </span>
                                 </div>
                               </div>
-                              <Tooltip delayDuration={300}>
-                                <TooltipTrigger asChild>
-                                  <button className='w-6 h-6 bg-secondary/20 hover:bg-secondary/30 rounded-full flex items-center justify-center transition-colors aspect-square'>
-                                    <span className='text-secondary text-xs font-medium'>
-                                      i
-                                    </span>
-                                  </button>
-                                </TooltipTrigger>
-                                <TooltipContent side='top' className='max-w-xs'>
-                                  <p className='text-sm'>
-                                    This action signals your intent to make a
-                                    payment and generates a unique hash that will
-                                    be used to verify your transaction on the
-                                    blockchain. This is the first step in the
-                                    secure payment process.
-                                  </p>
-                                </TooltipContent>
-                              </Tooltip>
                             </div>
                           )}
 
