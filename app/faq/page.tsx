@@ -1,25 +1,72 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+
+// Function to render text with markdown-style links
+function renderAnswer(text: string) {
+  const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = linkRegex.exec(text)) !== null) {
+    // Add text before the link
+    if (match.index > lastIndex) {
+      parts.push(text.substring(lastIndex, match.index));
+    }
+    
+    // Add the link
+    const linkText = match[1];
+    const linkUrl = match[2];
+    // Add https:// if it's not already there
+    const fullUrl = linkUrl.startsWith('http') ? linkUrl : `https://${linkUrl}`;
+    
+    parts.push(
+      <a
+        key={match.index}
+        href={fullUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-primary hover:text-primary/80 underline transition-colors"
+      >
+        {linkText}
+      </a>
+    );
+    
+    lastIndex = linkRegex.lastIndex;
+  }
+  
+  // Add remaining text after the last link
+  if (lastIndex < text.length) {
+    parts.push(text.substring(lastIndex));
+  }
+  
+  return parts.length > 1 ? parts : text;
+}
 
 interface FAQItemProps {
   id: string;
   question: string;
   answer: string;
+  isExpanded: boolean;
+  onToggle: (id: string) => void;
 }
 
-function FAQItem({ id, question, answer }: FAQItemProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+function FAQItem({ id, question, answer, isExpanded, onToggle }: FAQItemProps) {
+  const handleToggle = () => {
+    onToggle(id);
+  };
 
   return (
     <Card id={id} className="mb-4 shadow-lg border-0 scroll-mt-8">
       <CardHeader
         className="cursor-pointer hover:bg-gray-50 transition-colors"
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={handleToggle}
       >
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-semibold text-gray-900">
@@ -35,7 +82,7 @@ function FAQItem({ id, question, answer }: FAQItemProps) {
       {isExpanded && (
         <CardContent className="pt-0">
           <div className="text-gray-700 leading-relaxed whitespace-pre-line">
-            {answer}
+            {renderAnswer(answer)}
           </div>
         </CardContent>
       )}
@@ -44,41 +91,44 @@ function FAQItem({ id, question, answer }: FAQItemProps) {
 }
 
 export default function FAQPage() {
+  const router = useRouter();
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+
   const faqItems = [
     {
       id: 'what-is-samba',
       question: 'What is Samba?',
-      answer: 'Samba is a cross-border payment platform that enables seamless money transfers between different payment providers like Venmo and Revolut. Using advanced zero-knowledge proof technology, we ensure fast, secure, and transparent transactions with minimal fees.'
+      answer: 'Samba is a cross-border payment platform that enables seamless money transfers between different payment providers like Venmo and Revolut. Samba uses zkTLS through ZKP2P to ensure secure, fast, and cost-effective transactions without the need for traditional banking intermediaries. '
     },
     {
-      id: 'how-does-it-work',
-      question: 'How does Samba work?',
-      answer: 'Samba works by connecting different payment platforms through blockchain technology. When you initiate a transfer, our system:\n\n1. Creates a secure payment intent on the blockchain\n2. Matches you with a recipient on the target platform\n3. Verifies the payment using zero-knowledge proofs\n4. Completes the transfer to the recipient\n\nThis process typically takes just a few minutes and provides full transparency through blockchain verification.'
+      id: 'who-am-i-paying',
+      question: 'How do payments work?',
+      answer: 'Samba works by connecting supply/ demand for different currencies & platforms via ZKP2P. When you want to send money from Venmo to someone on Revolut, you\'ll send money on Venmo to a market maker first, and a market maker will send the equivalent amount on Revolut to the recipient.\n\nIt can be confusing when you enter in your recipient and see "send money to X" (a different recipient)! This is part of the magic of Samba routing your payments across applications and is totally secure.'
     },
     {
       id: 'supported-platforms',
       question: 'Which payment platforms are supported?',
-      answer: 'Currently, Samba supports transfers between:\n\n• Venmo (USD)\n• Revolut (USD, with EUR and GBP coming soon)\n\nWe are continuously working to add more payment providers and currencies to expand our global reach.'
+      answer: 'Currently, Samba supports transfers between:\n\n• Venmo (USD)\n• Revolut (USD, with EUR and GBP coming soon)\n\nWe will eventually expand to include all currencies and platforms included in ZKP2P and add connectors to ZKP2P where new service routes for Samba are demanded.'
     },
     {
       id: 'fees-and-rates',
       question: 'What are the fees and exchange rates?',
-      answer: 'Samba offers competitive fees and transparent pricing:\n\n• Transaction fees: Typically 1-3% of the transfer amount\n• Exchange rates: Real-time market rates with minimal markup\n• No hidden fees: All costs are displayed upfront before confirmation\n\nThe exact fee structure depends on the payment platforms and currencies involved in your transfer.'
+      answer: 'Samba offers competitive fees and transparent pricing:\n\n• Transaction fees are determined by the market makers of each platform - typically 0.5% to 1%. Right now, Samba does not take an additional fee on top, and is working to drive market making fees as close to 0 as possible.\n'
     },
     {
       id: 'security',
-      question: 'How secure is Samba?',
-      answer: 'Security is our top priority. Samba uses:\n\n• Zero-knowledge proofs to verify transactions without exposing sensitive data\n• Blockchain technology for immutable transaction records\n• End-to-end encryption for all communications\n• Multi-factor authentication for account access\n• Regular security audits and compliance checks\n\nYour funds and personal information are protected with bank-level security measures.'
+      question: 'How secure are fund transfers on Samba?',
+      answer: 'Samba offers superior security to traditional cross-border payments. Due to the underlying blockchain infrastructure, if a transaction somehow cannot be completed, your money is owned by you and can always be reclaimed. **In the alpha MVP, this feature is not enabled, and we will manually drive the refund process if you are not interested in writing scripts to refund yourself.'
     },
     {
       id: 'transaction-limits',
       question: 'Are there any transaction limits?',
-      answer: 'Yes, we have the following limits in place:\n\n• Minimum transfer: $0.10\n• Maximum transfer: $10,000 per transaction\n• Daily limits may apply based on your account verification level\n\nThese limits help ensure compliance with financial regulations and maintain platform security.'
+      answer: 'In the alpha MVP, Samba has a restrictive limit of $100 per transaction. This is to limit our liability in case of any issues (as we will of course refund you if there are any issues).'
     },
     {
       id: 'processing-time',
       question: 'How long do transfers take?',
-      answer: 'Most Samba transfers are completed quickly:\n\n• Payment verification: 1-2 minutes\n• Blockchain confirmation: 2-5 minutes\n• Recipient notification: Immediate\n• Total processing time: Typically 5-10 minutes\n\nProcessing times may vary depending on network congestion and payment platform response times.'
+      answer: 'Most Samba transfers are completed quickly:\n\n• Payment verification: ~1 Minute\n• Offramp market making: 5-10 minutes\n• Recipient notification: Immediate\n• Total processing time: Typically 5-10 minutes\n\nProcessing times may vary depending on network congestion and payment platform response times. We will work to make market making as instant as possible in the future.'
     },
     {
       id: 'getting-started',
@@ -86,11 +136,46 @@ export default function FAQPage() {
       answer: 'Getting started with Samba is simple:\n\n1. Sign in with your Google account\n2. Connect your payment accounts (Venmo, Revolut, etc.)\n3. Enter transfer details and recipient information\n4. Review and confirm the transaction\n5. Complete the payment through your chosen platform\n\nThe entire process is guided and user-friendly, with support available if you need help.'
     },
     {
+      id: 'why-google',
+      question: 'Why do I need to sign in with Google?',
+      answer: 'Samba\'s MVP is built to showcase a vision of an end product that does not target crypto-native customers. We will eventually implement full account abstraction, but in the meantime we simulate account actions by driving auth and processing on the backend.'
+    },
+    {
       id: 'support',
       question: 'How can I get help or support?',
-      answer: 'We offer multiple ways to get assistance:\n\n• Email support: Contact us through our support portal\n• Documentation: Comprehensive guides and tutorials\n• Community: Join our Discord or Telegram channels\n• Status page: Check system status and announcements\n\nOur support team typically responds within 24 hours during business days.'
+      answer: 'Join the [Samba Telegram Support Group here!](t.me/attestedfrontier/2)'
     }
   ];
+
+  const handleToggle = (id: string) => {
+    const newExpandedItems = new Set(expandedItems);
+    if (newExpandedItems.has(id)) {
+      newExpandedItems.delete(id);
+      // Remove hash from URL when collapsing
+      router.push('/faq', { scroll: false });
+    } else {
+      newExpandedItems.add(id);
+      // Add hash to URL when expanding
+      router.push(`/faq#${id}`, { scroll: false });
+      // Scroll to the element
+      setTimeout(() => {
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+    setExpandedItems(newExpandedItems);
+  };
+
+  // Handle initial load with hash
+  useEffect(() => {
+    const hash = window.location.hash.substring(1);
+    if (hash && faqItems.find(item => item.id === hash)) {
+      setExpandedItems(new Set([hash]));
+      // Scroll to the element after a brief delay to ensure rendering
+      setTimeout(() => {
+        document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-white to-secondary/5">
@@ -130,6 +215,8 @@ export default function FAQPage() {
               id={item.id}
               question={item.question}
               answer={item.answer}
+              isExpanded={expandedItems.has(item.id)}
+              onToggle={handleToggle}
             />
           ))}
         </div>
@@ -146,10 +233,10 @@ export default function FAQPage() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button
-                  onClick={() => window.location.href = 'mailto:support@samba.com'}
+                  onClick={() => window.open('https://t.me/attestedfrontier/2', '_blank')}
                   className="bg-gradient-to-r from-primary to-secondary hover:from-primary/80 hover:to-secondary/80"
                 >
-                  Contact Support
+                  Join Telegram Support
                 </Button>
                 <Link href="/">
                   <Button variant="outline">
@@ -167,13 +254,13 @@ export default function FAQPage() {
         <div className="text-center text-gray-600">
           <p>&copy; 2024 Samba. All rights reserved.</p>
           <div className="flex justify-center space-x-6 mt-4">
-            <Link href="#" className="hover:text-primary transition-colors">
+            <Link href="/privacy" className="hover:text-primary transition-colors">
               Privacy Policy
             </Link>
-            <Link href="#" className="hover:text-primary transition-colors">
+            <Link href="/terms" className="hover:text-primary transition-colors">
               Terms of Service
             </Link>
-            <Link href="#" className="hover:text-primary transition-colors">
+            <Link href="https://t.me/attestedfrontier/2" target="_blank" className="hover:text-primary transition-colors">
               Support
             </Link>
           </div>

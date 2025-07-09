@@ -288,13 +288,13 @@ export default function LandingPage() {
             <Link href='/faq' className='hover:text-primary transition-colors'>
               FAQ
             </Link>
-            <Link href='#' className='hover:text-primary transition-colors'>
+            <Link href='/privacy' className='hover:text-primary transition-colors'>
               Privacy Policy
             </Link>
-            <Link href='#' className='hover:text-primary transition-colors'>
+            <Link href='/terms' className='hover:text-primary transition-colors'>
               Terms of Service
             </Link>
-            <Link href='#' className='hover:text-primary transition-colors'>
+            <Link href='https://t.me/attestedfrontier/2' target='_blank' className='hover:text-primary transition-colors'>
               Support
             </Link>
           </div>
