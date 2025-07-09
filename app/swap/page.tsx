@@ -175,7 +175,7 @@ export default function SwapInterface() {
   // Contract management utility
   const ensureWrapperContract = async (): Promise<string | null> => {
     if (!user) return null;
-    
+
     try {
       const token = await user.getIdToken();
       const response = await fetch('/api/contract/wrapper', {
@@ -250,7 +250,7 @@ export default function SwapInterface() {
       if (response.ok) {
         // Success: show toast and exit modal
         console.log('✅ Intent canceled successfully');
-        
+
         // Show success notification
         // showBrowserNotification('Transfer Canceled', {
         //   body: 'Your existing transfer has been canceled successfully.',
@@ -429,7 +429,7 @@ export default function SwapInterface() {
 
   const handleReviewTransaction = async () => {
     setIsGettingQuote(true);
-    
+
     // Ensure we have both the quote and the contract
     const [quoteData, contractAddress] = await Promise.all([
       // Get quote
@@ -746,10 +746,10 @@ export default function SwapInterface() {
       if (user && !continuedIntent) {
         console.log('🔍 Checking for existing intent for user...');
         const existingIntent = await checkExistingIntent();
-        
+
         if (existingIntent) {
           console.log('🔄 Resuming existing intent:', existingIntent);
-          
+
           // Populate form fields from retrieved intent data
           setAmount(existingIntent.amount);
           setFromMethod(existingIntent.platform);
@@ -760,15 +760,15 @@ export default function SwapInterface() {
           setOnrampRecipient(existingIntent.toRecipient);
           setOnrampIntentHash(existingIntent.intentHash);
           setContinuedIntent(true);
-          
+
           // Show continuing banner
           setShowContinuingBanner(true);
-          
+
           // Set state to payment step in execution modal
           setShowExecutionModal(true);
           setExecutionStep(2);
           setExecutionProgress(10);
-          
+
           console.log('✅ Form populated and advanced to payment step for existing intent');
         }
       }
@@ -1389,6 +1389,8 @@ export default function SwapInterface() {
                 </div>
               )}
 
+
+
               {/* Error Display */}
               {errors.general && (
                 <div className='bg-red-50 border border-red-200 rounded-lg p-3'>
@@ -1419,7 +1421,7 @@ export default function SwapInterface() {
                           Trigger Payment
                         </h3>
                         <p className='text-sm text-gray-600 mb-3 leading-relaxed'>
-                          {proofStatus === 'generating' 
+                          {proofStatus === 'generating'
                             ? 'Initiating payment process and generating intent hash...'
                             : 'Automatically triggering payment process to generate the necessary intent hash for your transaction.'
                           }
@@ -1548,12 +1550,31 @@ export default function SwapInterface() {
                             </TooltipContent>
                           </Tooltip>
                         </p>
-                        <Button
-                          onClick={handleStepAcknowledge}
-                          className='w-full'
-                        >
-                          I have sent the payment
-                        </Button>
+                        <div className="space-y-3">
+                          <Button
+                            onClick={handleStepAcknowledge}
+                            className='w-full'
+                          >
+                            I have sent the payment
+                          </Button>
+                          {!showContinuingBanner && executionStep === 2 && (
+                            <Button
+                              onClick={handleCancelExistingIntent}
+                              disabled={isCancelingExistingIntent}
+                              variant='outline'
+                              className='w-full text-red-600 border-red-300 hover:bg-red-50 disabled:opacity-50'
+                            >
+                              {isCancelingExistingIntent ? (
+                                <div className='flex items-center space-x-1'>
+                                  <div className='w-3 h-3 border border-red-600 border-t-transparent rounded-full animate-spin'></div>
+                                  <span>Canceling...</span>
+                                </div>
+                              ) : (
+                                'Cancel Transfer'
+                              )}
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -1667,7 +1688,7 @@ export default function SwapInterface() {
                           Finalize Order
                         </h3>
                         <p className='text-sm text-gray-600 mb-3 leading-relaxed'>
-                          {isProcessing 
+                          {isProcessing
                             ? 'Finalizing remittance and completing blockchain transaction...'
                             : `Automatically finalizing remittance from ${fromMethod} to ${offrampRecipient} on ${toMethod} for ${amount}`
                           }
