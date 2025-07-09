@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowUpDown, LogOut, User } from 'lucide-react';
+import { ArrowUpDown, LogOut, User, Info } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { signalIntent, fulfillAndOnramp } from '@/lib/contract-api';
@@ -84,8 +84,8 @@ export default function SwapInterface() {
   const [depositTarget, setDepositTarget] = useState<QuoteResponse | null>(
     null
   );
-  const [onrampRecipient, setOnrampRecipient] = useState('Ian-Brighton');
-  const [offrampRecipient, setOfframpRecipient] = useState('ibrighton');
+  const [onrampRecipient, setOnrampRecipient] = useState('some-user');
+  const [offrampRecipient, setOfframpRecipient] = useState('recipient-username');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showExecutionModal, setShowExecutionModal] = useState(false);
   const [executionStep, setExecutionStep] = useState(1);
@@ -646,7 +646,7 @@ export default function SwapInterface() {
         currency,
         offrampRecipient,
         fromMethod as PaymentPlatforms,
-        offrampRecipient,
+        onrampRecipient,
         toMethod as PaymentPlatforms
       );
       setOnrampIntentHash(intentHash);
@@ -756,8 +756,8 @@ export default function SwapInterface() {
           setToMethod(existingIntent.toPlatform);
           setFromCurrency(existingIntent.currency);
           setToCurrency(existingIntent.currency); // Same currency for now
-          setOfframpRecipient(existingIntent.toRecipient);
-          setOnrampRecipient(existingIntent.recipient);
+          setOfframpRecipient(existingIntent.recipient);
+          setOnrampRecipient(existingIntent.toRecipient);
           setOnrampIntentHash(existingIntent.intentHash);
           setContinuedIntent(true);
           
@@ -1505,9 +1505,22 @@ export default function SwapInterface() {
                         <Clock className='h-8 w-8 text-yellow-600' />
                       </div>
                       <div>
-                        <h3 className='text-lg font-semibold mb-2'>
-                          Send Payment
-                        </h3>
+                        <div className="flex items-center space-x-2 mb-2">
+                          <h3 className='text-lg font-semibold'>
+                            Send Payment
+                          </h3>
+                          <Tooltip delayDuration={10}>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-xs">
+                              <p className="text-sm">
+                                This is the market maker for your <strong><i>{fromMethod}</i></strong> transfer.
+                                Your transaction to <strong><i>{offrampRecipient}</i></strong> on <strong><i>{toMethod}</i></strong> will be processed after this payment is made!
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
                         <p className='text-sm text-gray-600 mb-3 leading-relaxed'>
                           Please send{' '}
                           <strong>
@@ -1520,7 +1533,20 @@ export default function SwapInterface() {
                                 ?.name
                             }
                           </strong>{' '}
-                          account to <strong>{onrampRecipient}</strong>
+                          account to{' '}
+                          <Tooltip delayDuration={10}>
+                            <TooltipTrigger asChild>
+                              <strong className="cursor-help border-b border-dotted border-gray-400 hover:border-solid hover:border-gray-600 transition-all">
+                                {onrampRecipient}
+                              </strong>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-xs">
+                              <p className="text-sm">
+                                This is the market maker for your <strong><i>{fromMethod}</i></strong> transfer.
+                                Your transaction to <strong><i>{offrampRecipient}</i></strong> on <strong><i>{toMethod}</i></strong> will be processed after this payment is made!
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
                         </p>
                         <Button
                           onClick={handleStepAcknowledge}
