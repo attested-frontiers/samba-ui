@@ -65,7 +65,7 @@ export type ExtensionNotaryProofRequest = {
 
 export const ExtensionPostMessage = {
   OPEN_NEW_TAB: "open_new_tab",
-  REQUEST_CONNECTION: "request_connection",
+  REQUEST_CONNECTION: "request_zktls_connection",
   FETCH_EXTENSION_VERSION: "fetch_extension_version",
   FETCH_PROOF_BY_ID: "fetch_proof_by_id",
   GENERATE_PROOF: "generate_proof",

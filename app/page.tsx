@@ -12,7 +12,7 @@ import {
 import { ArrowRight, Shield, Zap, Globe, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import SwapInterface from './swap/page';
+import { useRouter } from 'next/navigation';
 
 export default function LandingPage() {
   const {
@@ -25,6 +25,7 @@ export default function LandingPage() {
     isDeployingContract,
   } = useAuth();
   const [mounted, setMounted] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     setMounted(true);
@@ -42,9 +43,10 @@ export default function LandingPage() {
     );
   }
 
-  // If user is authenticated and not checking/deploying contract, show swap interface
+  // If user is authenticated and not checking/deploying contract, redirect to swap
   if (user && !isCheckingContract && !isDeployingContract) {
-    return <SwapInterface />;
+    router.push('/swap');
+    return null;
   }
 
   // Show loading state when checking or deploying contracts
@@ -67,6 +69,10 @@ export default function LandingPage() {
     await signIn();
   };
 
+  const handleEnterApp = () => {
+    router.push('/swap');
+  };
+
   console.log('isDeployingContract', isDeployingContract);
 
   return (
@@ -79,7 +85,7 @@ export default function LandingPage() {
             <span className='text-xl font-bold text-gray-900'>Samba</span>
           </div>
           <Button
-            onClick={handleSignIn}
+            onClick={user ? handleEnterApp : handleSignIn}
             disabled={loading || isCheckingContract || isDeployingContract}
             className='bg-gradient-to-r from-primary to-secondary hover:from-primary/80 hover:to-secondary/80'
           >
@@ -89,6 +95,8 @@ export default function LandingPage() {
               ? 'Checking for wrapper contract...'
               : loading
               ? 'Signing in...'
+              : user
+              ? 'Enter App'
               : 'Sign In'}
           </Button>
         </nav>
@@ -133,7 +141,7 @@ export default function LandingPage() {
           </p>
           <div className='flex flex-col sm:flex-row gap-4 justify-center'>
             <Button
-              onClick={handleSignIn}
+              onClick={user ? handleEnterApp : handleSignIn}
               disabled={loading || isCheckingContract || isDeployingContract}
               size='lg'
               className='bg-gradient-to-r from-primary to-secondary hover:from-primary/80 hover:to-secondary/80 text-lg px-8 py-3'
@@ -144,15 +152,21 @@ export default function LandingPage() {
                 'Checking contract...'
               ) : loading ? (
                 'Signing in...'
+              ) : user ? (
+                <>
+                  Enter App <ArrowRight className='ml-2 h-5 w-5' />
+                </>
               ) : (
                 <>
                   Get Started <ArrowRight className='ml-2 h-5 w-5' />
                 </>
               )}
             </Button>
-            <Button variant='outline' size='lg' className='text-lg px-8 py-3'>
-              Learn More
-            </Button>
+            <Link href='/faq'>
+              <Button variant='outline' size='lg' className='text-lg px-8 py-3'>
+                Learn More
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -240,7 +254,7 @@ export default function LandingPage() {
               exchange needs. Sign in with Google and start trading in minutes.
             </p>
             <Button
-              onClick={handleSignIn}
+              onClick={user ? handleEnterApp : handleSignIn}
               disabled={loading || isCheckingContract || isDeployingContract}
               size='lg'
               variant='secondary'
@@ -252,6 +266,10 @@ export default function LandingPage() {
                 'Checking contract...'
               ) : loading ? (
                 'Signing in...'
+              ) : user ? (
+                <>
+                  Enter App <ArrowRight className='ml-2 h-5 w-5' />
+                </>
               ) : (
                 <>
                   Sign in with Google <ArrowRight className='ml-2 h-5 w-5' />
@@ -267,13 +285,16 @@ export default function LandingPage() {
         <div className='text-center text-gray-600'>
           <p>&copy; 2024 Samba. All rights reserved.</p>
           <div className='flex justify-center space-x-6 mt-4'>
-            <Link href='#' className='hover:text-primary transition-colors'>
+            <Link href='/faq' className='hover:text-primary transition-colors'>
+              FAQ
+            </Link>
+            <Link href='/privacy' className='hover:text-primary transition-colors'>
               Privacy Policy
             </Link>
-            <Link href='#' className='hover:text-primary transition-colors'>
+            <Link href='/terms' className='hover:text-primary transition-colors'>
               Terms of Service
             </Link>
-            <Link href='#' className='hover:text-primary transition-colors'>
+            <Link href='https://t.me/attestedfrontier/2' target='_blank' className='hover:text-primary transition-colors'>
               Support
             </Link>
           </div>
