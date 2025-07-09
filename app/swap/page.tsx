@@ -18,8 +18,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowUpDown, LogOut, User } from 'lucide-react';
+import { ArrowUpDown, LogOut, User, Info } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
 import { signalIntent, fulfillAndOnramp } from '@/lib/contract-api';
 // import { useAccount, useDisconnect } from 'wagmi';
 // import { useContracts } from '@/context/contracts';
@@ -67,6 +68,7 @@ const paymentMethods = [
 
 export default function SwapInterface() {
   const { user, loading, signOut } = useAuth();
+  const router = useRouter();
   // const { address } = useAccount();
   // const { samba } = useContSracts();
   // const { disconnect } = useDisconnect();
@@ -82,8 +84,8 @@ export default function SwapInterface() {
   const [depositTarget, setDepositTarget] = useState<QuoteResponse | null>(
     null
   );
-  const [onrampRecipient, setOnrampRecipient] = useState('Ian-Brighton');
-  const [offrampRecipient, setOfframpRecipient] = useState('ibrighton');
+  const [onrampRecipient, setOnrampRecipient] = useState('some-user');
+  const [offrampRecipient, setOfframpRecipient] = useState('recipient-username');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showExecutionModal, setShowExecutionModal] = useState(false);
   const [executionStep, setExecutionStep] = useState(1);
@@ -173,7 +175,7 @@ export default function SwapInterface() {
   // Contract management utility
   const ensureWrapperContract = async (): Promise<string | null> => {
     if (!user) return null;
-    
+
     try {
       const token = await user.getIdToken();
       const response = await fetch('/api/contract/wrapper', {
@@ -248,7 +250,7 @@ export default function SwapInterface() {
       if (response.ok) {
         // Success: show toast and exit modal
         console.log('✅ Intent canceled successfully');
-        
+
         // Show success notification
         // showBrowserNotification('Transfer Canceled', {
         //   body: 'Your existing transfer has been canceled successfully.',
@@ -427,7 +429,7 @@ export default function SwapInterface() {
 
   const handleReviewTransaction = async () => {
     setIsGettingQuote(true);
-    
+
     // Ensure we have both the quote and the contract
     const [quoteData, contractAddress] = await Promise.all([
       // Get quote
@@ -644,7 +646,7 @@ export default function SwapInterface() {
         currency,
         offrampRecipient,
         fromMethod as PaymentPlatforms,
-        offrampRecipient,
+        onrampRecipient,
         toMethod as PaymentPlatforms
       );
       setOnrampIntentHash(intentHash);
@@ -744,29 +746,29 @@ export default function SwapInterface() {
       if (user && !continuedIntent) {
         console.log('🔍 Checking for existing intent for user...');
         const existingIntent = await checkExistingIntent();
-        
+
         if (existingIntent) {
           console.log('🔄 Resuming existing intent:', existingIntent);
-          
+
           // Populate form fields from retrieved intent data
           setAmount(existingIntent.amount);
           setFromMethod(existingIntent.platform);
           setToMethod(existingIntent.toPlatform);
           setFromCurrency(existingIntent.currency);
           setToCurrency(existingIntent.currency); // Same currency for now
-          setOfframpRecipient(existingIntent.toRecipient);
-          setOnrampRecipient(existingIntent.recipient);
+          setOfframpRecipient(existingIntent.recipient);
+          setOnrampRecipient(existingIntent.toRecipient);
           setOnrampIntentHash(existingIntent.intentHash);
           setContinuedIntent(true);
-          
+
           // Show continuing banner
           setShowContinuingBanner(true);
-          
+
           // Set state to payment step in execution modal
           setShowExecutionModal(true);
           setExecutionStep(2);
           setExecutionProgress(10);
-          
+
           console.log('✅ Form populated and advanced to payment step for existing intent');
         }
       }
@@ -1003,6 +1005,26 @@ export default function SwapInterface() {
     { number: 2, title: 'Review' },
     { number: 3, title: 'Confirm' },
   ];
+
+  // Redirect to landing page if not authenticated
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/');
+    }
+  }, [user, loading, router]);
+
+  // Show loading while checking auth or redirecting
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <img src='/samba-logo.png' alt='Samba' className='w-16 h-16 mx-auto mb-4' />
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <TooltipProvider>
@@ -1367,6 +1389,8 @@ export default function SwapInterface() {
                 </div>
               )}
 
+
+
               {/* Error Display */}
               {errors.general && (
                 <div className='bg-red-50 border border-red-200 rounded-lg p-3'>
@@ -1397,7 +1421,7 @@ export default function SwapInterface() {
                           Trigger Payment
                         </h3>
                         <p className='text-sm text-gray-600 mb-3 leading-relaxed'>
-                          {proofStatus === 'generating' 
+                          {proofStatus === 'generating'
                             ? 'Initiating payment process and generating intent hash...'
                             : 'Automatically triggering payment process to generate the necessary intent hash for your transaction.'
                           }
@@ -1483,9 +1507,22 @@ export default function SwapInterface() {
                         <Clock className='h-8 w-8 text-yellow-600' />
                       </div>
                       <div>
-                        <h3 className='text-lg font-semibold mb-2'>
-                          Send Payment
-                        </h3>
+                        <div className="flex items-center space-x-2 mb-2">
+                          <h3 className='text-lg font-semibold'>
+                            Send Payment
+                          </h3>
+                          <Tooltip delayDuration={10}>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-xs">
+                              <p className="text-sm">
+                                This is the market maker for your <strong><i>{fromMethod}</i></strong> transfer.
+                                Your transaction to <strong><i>{offrampRecipient}</i></strong> on <strong><i>{toMethod}</i></strong> will be processed after this payment is made!
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
                         <p className='text-sm text-gray-600 mb-3 leading-relaxed'>
                           Please send{' '}
                           <strong>
@@ -1498,14 +1535,46 @@ export default function SwapInterface() {
                                 ?.name
                             }
                           </strong>{' '}
-                          account to <strong>{onrampRecipient}</strong>
+                          account to{' '}
+                          <Tooltip delayDuration={10}>
+                            <TooltipTrigger asChild>
+                              <strong className="cursor-help border-b border-dotted border-gray-400 hover:border-solid hover:border-gray-600 transition-all">
+                                {onrampRecipient}
+                              </strong>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-xs">
+                              <p className="text-sm">
+                                This is the market maker for your <strong><i>{fromMethod}</i></strong> transfer.
+                                Your transaction to <strong><i>{offrampRecipient}</i></strong> on <strong><i>{toMethod}</i></strong> will be processed after this payment is made!
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
                         </p>
-                        <Button
-                          onClick={handleStepAcknowledge}
-                          className='w-full'
-                        >
-                          I have sent the payment
-                        </Button>
+                        <div className="space-y-3">
+                          <Button
+                            onClick={handleStepAcknowledge}
+                            className='w-full'
+                          >
+                            I have sent the payment
+                          </Button>
+                          {!showContinuingBanner && executionStep === 2 && (
+                            <Button
+                              onClick={handleCancelExistingIntent}
+                              disabled={isCancelingExistingIntent}
+                              variant='outline'
+                              className='w-full text-red-600 border-red-300 hover:bg-red-50 disabled:opacity-50'
+                            >
+                              {isCancelingExistingIntent ? (
+                                <div className='flex items-center space-x-1'>
+                                  <div className='w-3 h-3 border border-red-600 border-t-transparent rounded-full animate-spin'></div>
+                                  <span>Canceling...</span>
+                                </div>
+                              ) : (
+                                'Cancel Transfer'
+                              )}
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -1619,7 +1688,7 @@ export default function SwapInterface() {
                           Finalize Order
                         </h3>
                         <p className='text-sm text-gray-600 mb-3 leading-relaxed'>
-                          {isProcessing 
+                          {isProcessing
                             ? 'Finalizing remittance and completing blockchain transaction...'
                             : `Automatically finalizing remittance from ${fromMethod} to ${offrampRecipient} on ${toMethod} for ${amount}`
                           }
