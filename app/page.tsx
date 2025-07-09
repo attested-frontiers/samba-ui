@@ -283,6 +283,9 @@ export default function LandingPage() {
         <div className='text-center text-gray-600'>
           <p>&copy; 2024 Samba. All rights reserved.</p>
           <div className='flex justify-center space-x-6 mt-4'>
+            <Link href='/faq' className='hover:text-primary transition-colors'>
+              FAQ
+            </Link>
             <Link href='#' className='hover:text-primary transition-colors'>
               Privacy Policy
             </Link>
