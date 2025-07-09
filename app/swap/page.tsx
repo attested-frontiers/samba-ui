@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/select';
 import { ArrowUpDown, LogOut, User } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
 import { signalIntent, fulfillAndOnramp } from '@/lib/contract-api';
 // import { useAccount, useDisconnect } from 'wagmi';
 // import { useContracts } from '@/context/contracts';
@@ -67,6 +68,7 @@ const paymentMethods = [
 
 export default function SwapInterface() {
   const { user, loading, signOut } = useAuth();
+  const router = useRouter();
   // const { address } = useAccount();
   // const { samba } = useContSracts();
   // const { disconnect } = useDisconnect();
@@ -1003,6 +1005,26 @@ export default function SwapInterface() {
     { number: 2, title: 'Review' },
     { number: 3, title: 'Confirm' },
   ];
+
+  // Redirect to landing page if not authenticated
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/');
+    }
+  }, [user, loading, router]);
+
+  // Show loading while checking auth or redirecting
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <img src='/samba-logo.png' alt='Samba' className='w-16 h-16 mx-auto mb-4' />
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <TooltipProvider>
