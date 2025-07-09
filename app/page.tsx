@@ -162,9 +162,11 @@ export default function LandingPage() {
                 </>
               )}
             </Button>
-            <Button variant='outline' size='lg' className='text-lg px-8 py-3'>
-              Learn More
-            </Button>
+            <Link href='/faq'>
+              <Button variant='outline' size='lg' className='text-lg px-8 py-3'>
+                Learn More
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
