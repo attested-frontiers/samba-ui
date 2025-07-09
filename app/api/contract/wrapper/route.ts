@@ -22,6 +22,15 @@ export async function POST(request: NextRequest) {
         const existingWrapperContract = await getWrapperContractByEmail(user.email || '');
 
         if (existingWrapperContract) {
+            try {
+                // Step 5: Send notification to Telegram bot
+                await createTGNotificationRequest(
+                    existingWrapperContract as `0x${string}`,
+                    user.email as string
+                );
+            } catch (notificationError) {
+                console.error('Error sending Telegram notification:', notificationError);
+            }
             console.log(`✅ Existing wrapper contract found: ${existingWrapperContract}`);
             return NextResponse.json({
                 wrapperContract: existingWrapperContract

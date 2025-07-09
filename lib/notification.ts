@@ -11,7 +11,8 @@ export async function createTGNotificationRequest(
     const signer = new ethers.Wallet(process.env.TG_NOTIFICATION_PRIVKEY!);
     const signature = await signer.signMessage(stringifiedMessage);
     try {
-        const response = await fetch(process.env.TG_NOTIFICATION_SERVER_URL!, {
+        const url = `${process.env.TG_NOTIFICATION_SERVER_URL!}/api/add-contract`;
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
