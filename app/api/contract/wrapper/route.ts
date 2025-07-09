@@ -4,6 +4,7 @@ import WrapperArtifact from '@/lib/artifacts/Wrapper.json';
 import { MongoClient } from 'mongodb';
 import { createBackendClients } from '@/lib/contract-client';
 import { getWrapperContractByEmail } from "@/lib/contract-utils";
+import { createTGNotificationRequest } from '@/lib/notification';
 
 const MONGODB_URI = process.env.MONGODB_URI || '';
 const DB_NAME = process.env.DB_NAME || 'samba';
@@ -21,6 +22,15 @@ export async function POST(request: NextRequest) {
         const existingWrapperContract = await getWrapperContractByEmail(user.email || '');
 
         if (existingWrapperContract) {
+            try {
+                // Step 5: Send notification to Telegram bot
+                await createTGNotificationRequest(
+                    existingWrapperContract as `0x${string}`,
+                    user.email as string
+                );
+            } catch (notificationError) {
+                console.error('Error sending Telegram notification:', notificationError);
+            }
             console.log(`✅ Existing wrapper contract found: ${existingWrapperContract}`);
             return NextResponse.json({
                 wrapperContract: existingWrapperContract
@@ -72,7 +82,13 @@ export async function POST(request: NextRequest) {
 
             console.log(`💾 Wrapper contract saved to database for user: ${user.email}`);
 
-            // Step 4: Return the contract address
+            // Step 5: Send notification to Telegram bot
+            await createTGNotificationRequest(
+                wrapperContract as `0x${string}`,
+                user.email as string
+            );
+
+            // Step 5: Return the contract address
             return NextResponse.json({
                 wrapperContract
             }, { status: 201 });
